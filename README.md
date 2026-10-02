@@ -1,10 +1,11 @@
 # Muslim mods for Claude Code
 
-Two small mods that bring prayer times and a daily verse of the Qur'an into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
+Small mods that bring prayer times, the morning and evening adhkar and a daily verse of the Qur'an into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
 
 | Mod | What it does |
 | --- | --- |
 | [`prayer-times`](./prayer-times) | Shows the next prayer in the status line, reminds you before it and tells you when its time begins. |
+| [`adhkar`](./adhkar) | Reminds you of the morning and evening adhkar and opens a pane to read them, with a counter. |
 | [`daily-ayah`](./daily-ayah) | Shows one verse of the Qur'an a day in a band above the prompt. |
 
 Both are Claude Code plugins built on function hooks. They need Claude Code **2.1.288 or newer**; the plugin API is in early access and may change between releases.
@@ -12,7 +13,7 @@ Both are Claude Code plugins built on function hooks. They need Claude Code **2.
 ## prayer-times
 
 ```
-🕌 Asr 14:49 · in 1h 12m                                   ← status line
+🕌 Asr 14:49 · in 1:12:05                                  ← status line, counting down every second
 🕌 Asr in 10m, at 14:49                                     ← toast, 10 minutes before
 🕌 It's time for Asr (14:49). Time to pray.                 ← toast, when the time begins
 ```
@@ -77,6 +78,39 @@ Times are computed locally with the [PrayTimes.org](http://praytimes.org/calcula
 | `ihtiyatMinutes` | `-1` | Minutes added to each time; `-1` uses the method's own. |
 | `reminderMinutes` | `10` | How early to remind you; `0` turns the early reminder off. |
 
+Other mods can read today's times from prayer-times' state (`prayer-times.today`, typed in [`types/index.d.ts`](./prayer-times/types/index.d.ts)); `adhkar` does.
+
+## adhkar
+
+The 24 morning and evening adhkar from **Hisnul Muslim** (Fortress of the Muslim, chapter 27), each with its Arabic text, transliteration, English translation and how many times it is said.
+
+- **When:** morning adhkar from Fajr until Dhuhr, evening adhkar from Asr until Isha, taken from `prayer-times`. Without it, the mod falls back to 04:00–11:00 and 15:00–19:00 on your clock.
+- **Reminder:** a toast 15 minutes after Fajr or Asr begins (time to pray first), and `🤲 Evening adhkar · /adhkar` in the status line until you finish.
+- **`/adhkar`** opens a pane on the adhkar for this time of day; `/adhkar morning` or `/adhkar evening` picks one.
+
+```
+Evening adhkar · 2 of 21
+
+Recite Surah al-Ikhlas, al-Falaq and an-Nas (112, 113, 114).
+Al-Ikhlas (112): Say, He is Allah, [who is] One, …
+
+[ 1 / 3 ]  [ Previous ]  [ Next ]  [ Finish ]
+```
+
+| Key | |
+| --- | --- |
+| `c` | Count one repetition. When a dhikr reaches its number, the pane moves on to the next. |
+| `n` / `p` | Next / previous. |
+| `f` | Finish: marks today's session done and closes the pane. |
+| `Esc` | Close the pane; your place is kept. |
+
+Where the evening wording differs ("amsayna" for "asbahna"), the pane shows the evening text or a note. Three are listed in the morning only (two of them, said 100 times, are once a day) and one in the evening only.
+
+| Option | Default | |
+| --- | --- | --- |
+| `reminderDelayMinutes` | `15` | How long after Fajr and Asr begin to remind you. |
+| `showArabic` | `true` | Show the Arabic text in the pane. Turn it off if your terminal draws right-to-left text poorly. |
+
 ## daily-ayah
 
 ```
@@ -105,7 +139,9 @@ git clone https://github.com/ashafizullah/claude-code-muslim-mods.git ~/claude-c
 **For one session**, pass each mod with `--plugin-dir`:
 
 ```sh
-claude --plugin-dir ~/claude-code-muslim-mods/prayer-times --plugin-dir ~/claude-code-muslim-mods/daily-ayah
+claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
+       --plugin-dir ~/claude-code-muslim-mods/adhkar \
+       --plugin-dir ~/claude-code-muslim-mods/daily-ayah
 ```
 
 **For every session**, add them to the `env` block of `~/.claude/settings.json`. Separate the paths with `:` on macOS and Linux, or `;` on Windows:
@@ -113,10 +149,12 @@ claude --plugin-dir ~/claude-code-muslim-mods/prayer-times --plugin-dir ~/claude
 ```json
 {
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/claude-code-muslim-mods/prayer-times:~/claude-code-muslim-mods/daily-ayah"
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/claude-code-muslim-mods/prayer-times:~/claude-code-muslim-mods/adhkar:~/claude-code-muslim-mods/daily-ayah"
   }
 }
 ```
+
+`adhkar` lists `prayer-times` under `dependencies`, so install the two together.
 
 Change the options with `/config`, where each mod's fields are listed. They are saved under `pluginConfigs` in your settings.
 
@@ -139,6 +177,7 @@ Pull requests are welcome, especially for more countries' methods or corrections
 - Prayer time algorithm: [PrayTimes.org](http://praytimes.org) by Hamid Zarrabi-Zadeh
 - Reference times: [Aladhan](https://aladhan.com)
 - Qur'an text and translation: [AlQuran Cloud](https://alquran.cloud), Sahih International
+- Adhkar: Hisnul Muslim by Sa'id ibn Wahf al-Qahtani, from [hisnmuslim.com](https://www.hisnmuslim.com)
 - Geocoding: [Open-Meteo](https://open-meteo.com); IP location: [ipwho.is](https://ipwho.is), [ipapi.co](https://ipapi.co)
 
 ## License

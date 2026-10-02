@@ -182,3 +182,15 @@ export function span(ms: number) {
   const m = minutes % 60
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
+
+/** H:MM:SS, for a countdown that ticks every second. */
+export function countdown(ms: number) {
+  const seconds = Math.max(0, Math.ceil(ms / 1e3))
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${Math.floor(seconds / 3600)}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`
+}
+
+/** YYYY-MM-DD in `timeZone`. */
+export function localDate(at: number, timeZone: string) {
+  return new Date(at + offsetHours(at, timeZone) * 3600e3).toISOString().slice(0, 10)
+}

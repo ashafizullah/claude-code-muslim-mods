@@ -53,14 +53,17 @@ test('detects the place from the IP, reminds before Asr and announces it', async
   const w = world(on, { 'https://ipwho.is/': IPWHO })
 
   await $.session.start(start)
-  expect(w.statuses.at(-1)).toBe('🕌 Asr 14:49 · in 14m')
+  expect(w.statuses.at(-1)).toBe('🕌 Asr 14:49 · in 0:14:00')
 
-  await clock.advance(5 * 60e3)
+  await clock.advance(1e3)
+  expect(w.statuses.at(-1)).toBe('🕌 Asr 14:49 · in 0:13:59')
+
+  await clock.advance(5 * 60e3 - 1e3)
   expect(w.toasts).toEqual(['🕌 Asr in 10m, at 14:49'])
 
   await clock.advance(10 * 60e3)
   expect(w.toasts.at(-1)).toBe("🕌 It's time for Asr (14:49). Time to pray.")
-  expect(w.statuses.at(-1)).toBe('🕌 Maghrib 17:49 · in 2h 59m')
+  expect(w.statuses.at(-1)).toBe('🕌 Maghrib 17:49 · in 2:59:00')
 
   const { text } = await $.command.run(run(''))
   expect(text).toContain('Jakarta, Indonesia · Asia/Jakarta · Kemenag · detected from your IP')

@@ -1,16 +1,22 @@
+import { atom, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
+
+import type { PrayerTimesDay } from '../types'
 
 import { IP_URLS, geocodeUrl, parseCoordinates, parseGeocode, parseIpLookup } from './location'
 import type { Place } from './location'
-import { METHOD_NAMES, PRAYERS, clock, isTimeZone, methodFor, prayerTimes, span, upcoming } from './praytimes'
+import { METHOD_NAMES, PRAYERS, clock, countdown, isTimeZone, localDate, methodFor, prayerTimes, span, upcoming } from './praytimes'
 import type { Asr, Method, Settings, Slot } from './praytimes'
 
-const TICK_MS = 20e3
+// Every second, so the countdown in the status line counts down.
+const TICK_MS = 1e3
 // A crossing older than this (the laptop slept through it) is not announced.
 const STALE_MS = 5 * 60e3
 // An IP lookup is redone daily, so the times follow a traveller.
 const IP_CACHE_MS = 24 * 3600e3
 const PLACE_KEY = 'place'
+
+const today = atom({ plugin: 'prayer-times', key: 'today' } as const, null)
 
 const isPrayer = (slot: Slot) => (PRAYERS as readonly string[]).includes(slot.name)
 
@@ -25,6 +31,7 @@ type Watch = {
   place?: Place
   settings?: Settings
   lastTick: number
+  published?: string
 }
 
 async function fetchJson($: EngineInterface, url: string) {
@@ -65,6 +72,17 @@ async function locate($: EngineInterface, query: string): Promise<Place | undefi
   return place
 }
 
+/** Puts today's times in this mod's state, where other mods (adhkar) read them. */
+async function publish($: EngineInterface, w: Watch, now: number, s: Settings) {
+  const slots = prayerTimes(now, s)
+  const date = localDate(now, s.timeZone)
+  const key = `${date} ${s.latitude} ${s.longitude} ${s.method} ${s.asr} ${s.ihtiyatMinutes}`
+  if (w.published === key) return
+  w.published = key
+  const day: PrayerTimesDay = { date, timeZone: s.timeZone, slots }
+  await update($, today, () => day)
+}
+
 async function tick($: EngineInterface, w: Watch) {
   const now = await $.clock.now()
   const s = w.settings
@@ -73,6 +91,7 @@ async function tick($: EngineInterface, w: Watch) {
     w.lastTick = now
     return
   }
+  await publish($, w, now, s)
   const prayers = upcoming(now, s).filter(isPrayer)
   const crossed = (at: number) => w.lastTick < at && at <= now && now - at < STALE_MS
 
@@ -90,7 +109,7 @@ async function tick($: EngineInterface, w: Watch) {
 
   const next = prayers.find(p => p.at > now)
   if (next) {
-    $.ui.status(`🕌 ${next.name} ${clock(next.at, s.timeZone)} · in ${span(next.at - now)}`)
+    $.ui.status(`🕌 ${next.name} ${clock(next.at, s.timeZone)} · in ${countdown(next.at - now)}`)
   }
   w.lastTick = now
 }
