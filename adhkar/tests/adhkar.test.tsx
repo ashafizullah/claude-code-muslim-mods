@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { listFor, windowsFor, wordingFor } from '../hooks/register'
+import { listFor, rowsFor, windowsFor, wordingFor } from '../hooks/register'
 
 const H = 3600e3
 // Semarang, 3 Oct 2026 (WIB, UTC+7), as prayer-times publishes it.
@@ -70,6 +70,14 @@ test('the evening list and wording', () => {
   expect(evening.some(d => d.id === 95)).toBe(false)
   expect(evening.some(d => d.id === 97)).toBe(true)
   expect(wordingFor(evening.find(d => d.id === 78)!, 'evening').english).toStartWith('O Allah, by Your leave we have reached the evening')
+})
+
+test('the pane asks for room for the longest dhikr, more on a narrow terminal', () => {
+  const wide = rowsFor('morning', 160, false)
+  const narrow = rowsFor('morning', 60, false)
+  expect(wide).toBeGreaterThan(8)
+  expect(narrow).toBeGreaterThan(wide)
+  expect(rowsFor('morning', 160, true)).toBeGreaterThan(wide)
 })
 
 test('reminds after Asr, then the pane counts through and finishes', async ($, on) => {

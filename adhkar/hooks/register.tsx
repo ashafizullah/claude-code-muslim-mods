@@ -68,6 +68,21 @@ export function windowsFor(now: number, day: PrayerTimesDay | null | undefined):
   ]
 }
 
+/** Rows the pane needs for the longest dhikr of the list at this width, so the whole of each fits. */
+export function rowsFor(m: AdhkarMode, columns: number, showArabic: boolean) {
+  const width = Math.max(20, columns - 4)
+  const lines = (text: string) => text.split('\n').reduce((n, part) => n + Math.max(1, Math.ceil(part.length / width)), 0)
+  const tallest = Math.max(
+    ...listFor(m).map(d => {
+      const words = wordingFor(d, m)
+      const parts = [words.transliteration, words.english, d.note ?? '', showArabic ? d.arabic : ''].filter(Boolean)
+      return parts.reduce((n, part) => n + lines(part) + 1, 0)
+    }),
+  )
+  // The title and the buttons, each with the gap below it.
+  return tallest + 4
+}
+
 type Watch = { delayMs: number; lastTick: number }
 
 async function tick($: EngineInterface, w: Watch) {
@@ -167,7 +182,14 @@ export const register: Register = (on, options) => {
       await update($, index, () => 0)
     }
     await tick($, watch)
-    await $.ui.open({ id: PANE, title: TITLE[chosen], focus: true, closeOnEscape: true })
+    await $.ui.open({
+      id: PANE,
+      title: TITLE[chosen],
+      focus: true,
+      closeOnEscape: true,
+      rows: rowsFor(chosen, e.presentation.columns, showArabic),
+      columns: 90,
+    })
 
     return { text: `${TITLE[chosen]} opened. Keys: c count, n next, p previous, f finish, x close.` }
   })
@@ -196,10 +218,6 @@ export const register: Register = (on, options) => {
           {TITLE[m]} · {i + 1} of {list.length}
           {isDone ? ' · finished today' : ''}
         </Text>
-        {showArabic && <Text>{d.arabic}</Text>}
-        <Text italic>{words.transliteration}</Text>
-        <Text>{words.english}</Text>
-        {d.note && <Text dimColor>{d.note}</Text>}
         <Box flexDirection="row" gap={2}>
           <Button key="count" variant="primary" hotkey="c" label={`${said} / ${d.repeat}`} onPress={() => count($)} />
           <Button key="prev" hotkey="p" label="Previous" onPress={() => step($, -1)} />
@@ -207,6 +225,10 @@ export const register: Register = (on, options) => {
           <Button key="finish" hotkey="f" label="Finish" onPress={() => finish($)} />
           <Button key="close" hotkey="x" role="dismiss" label="Close" onPress={() => $.ui.close({ id: PANE })} />
         </Box>
+        {showArabic && <Text>{d.arabic}</Text>}
+        <Text italic>{words.transliteration}</Text>
+        <Text>{words.english}</Text>
+        {d.note && <Text dimColor>{d.note}</Text>}
       </Box>
     )
   })

@@ -160,6 +160,19 @@ claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
 
 Change the options with `/config`, where each mod's fields are listed. They are saved under `pluginConfigs` in your settings.
 
+## Data sources and APIs
+
+| Source | Used for | When |
+| --- | --- | --- |
+| [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) `geocoding-api.open-meteo.com/v1/search` | Turning the `city` option into coordinates and a time zone | At runtime, once per city (cached) |
+| [ipwho.is](https://ipwho.is) `ipwho.is/` | Finding your location from your IP when `city` is blank | At runtime, at most once a day (cached) |
+| [ipapi.co](https://ipapi.co) `ipapi.co/json/` | Fallback for ipwho.is | Only when ipwho.is fails |
+| [AlQuran Cloud API](https://alquran.cloud/api) `api.alquran.cloud/v1/ayah/{ref}/editions/quran-uthmani,en.sahih` | The Arabic text and Sahih International translation in `daily-ayah` | Once, when the mod was built; bundled in [`daily-ayah/hooks/verses.ts`](./daily-ayah/hooks/verses.ts) |
+| [Hisnul Muslim API](https://www.hisnmuslim.com) `hisnmuslim.com/api/en/27.json` | The morning and evening adhkar in `adhkar` | Once, when the mod was built; bundled in [`adhkar/hooks/adhkar.ts`](./adhkar/hooks/adhkar.ts) |
+| [Aladhan API](https://aladhan.com/prayer-times-api) `api.aladhan.com/v1/timings` | Checking the calculated prayer times | During development only; the mods never call it |
+
+Prayer times themselves are calculated on your machine; no API is called for them. With coordinates in `city`, none of the mods makes a network request.
+
 ## Development
 
 Each mod is a folder with a `.claude-plugin/plugin.json` manifest and a hooks module under `hooks/`. From a mod's folder:
