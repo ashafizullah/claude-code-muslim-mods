@@ -1,4 +1,4 @@
-import { atom, update } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { PrayerTimesDay } from '../types'
@@ -17,6 +17,7 @@ const IP_CACHE_MS = 24 * 3600e3
 const PLACE_KEY = 'place'
 
 const today = atom({ plugin: 'prayer-times', key: 'today' } as const, null)
+const line = atom({ plugin: 'prayer-times', key: 'line' } as const, null)
 
 const isPrayer = (slot: Slot) => (PRAYERS as readonly string[]).includes(slot.name)
 
@@ -87,7 +88,7 @@ async function tick($: EngineInterface, w: Watch) {
   const now = await $.clock.now()
   const s = w.settings
   if (!s) {
-    $.ui.status('🕌 Location unknown: run /prayer-times <your city>')
+    await update($, line, () => '🕌 Location unknown: /prayer-times <your city>')
     w.lastTick = now
     return
   }
@@ -109,7 +110,8 @@ async function tick($: EngineInterface, w: Watch) {
 
   const next = prayers.find(p => p.at > now)
   if (next) {
-    $.ui.status(`🕌 ${next.name} ${clock(next.at, s.timeZone)} · in ${countdown(next.at - now)}`)
+    const text = `🕌 ${next.name} ${clock(next.at, s.timeZone)} · in ${countdown(next.at - now)}`
+    await update($, line, () => text)
   }
   w.lastTick = now
 }
@@ -151,6 +153,13 @@ export const register: Register = (on, options) => {
     $.clock.every(TICK_MS, () => void tick($, watch))
 
     return next(e)
+  })
+
+  // Leads the tail of the hint line under the prompt, where other mods (adhkar) add theirs after it: one line, no labels.
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    const text = await read($, line)
+    if (!text) return next(e)
+    return next({ ...e, props: { ...e.props, tail: e.props.tail ? `${text} · ${e.props.tail}` : text } })
   })
 
   on('command.run', { command: 'prayer-times' }, async ($, e) => {

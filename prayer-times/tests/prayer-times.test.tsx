@@ -16,7 +16,7 @@ function world(on: On, answers: Record<string, string | undefined>) {
   const fetched: string[] = []
   const configured: unknown[] = []
   const toasts: string[] = []
-  const statuses: (string | undefined)[] = []
+  const tails: (string | undefined)[] = []
   mock.store(on)
   on('http.fetch', (_, e) => {
     fetched.push(e.url)
@@ -31,16 +31,24 @@ function world(on: On, answers: Record<string, string | undefined>) {
     toasts.push(e.text)
     return { value: undefined }
   })
-  on('ui.status', (_, e) => {
-    statuses.push(e.text)
-    return { value: undefined }
+  // The engine's hint line: records the tail the mods hand it.
+  on('ui.render', ($, e) => {
+    if (e.component === 'PromptHint') tails.push(e.props.tail)
+    const { Box } = $.ui.resolve(e)
+    return <Box key="engine" />
   })
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
-  return { fetched, configured, toasts, statuses }
+  return { fetched, configured, toasts, tails }
 }
 
 const start = { cwd: '/', surface: 'terminal', isInteractive: true } as const
+const HINT = {
+  plugin: 'prayer-times',
+  surface: 'terminal',
+  component: 'PromptHint',
+  props: { isDraft: false, isWorking: false, hint: '? for shortcuts' },
+} as const
 const run = (args: string) => ({
   command: 'prayer-times',
   args,
@@ -53,17 +61,18 @@ test('detects the place from the IP, reminds before Asr and announces it', async
   const w = world(on, { 'https://ipwho.is/': IPWHO })
 
   await $.session.start(start)
-  expect(w.statuses.at(-1)).toBe('🕌 Asr 14:49 · in 0:14:00')
+  await $.ui.mount(HINT as never)
+  expect(w.tails.at(-1)).toBe('🕌 Asr 14:49 · in 0:14:00')
 
   await clock.advance(1e3)
-  expect(w.statuses.at(-1)).toBe('🕌 Asr 14:49 · in 0:13:59')
+  expect(w.tails.at(-1)).toBe('🕌 Asr 14:49 · in 0:13:59')
 
   await clock.advance(5 * 60e3 - 1e3)
   expect(w.toasts).toEqual(['🕌 Asr in 10m, at 14:49'])
 
   await clock.advance(10 * 60e3)
   expect(w.toasts.at(-1)).toBe("🕌 It's time for Asr (14:49). Time to pray.")
-  expect(w.statuses.at(-1)).toBe('🕌 Maghrib 17:49 · in 2:59:00')
+  expect(w.tails.at(-1)).toBe('🕌 Maghrib 17:49 · in 2:59:00')
 
   const { text } = await $.command.run(run(''))
   expect(text).toContain('Jakarta, Indonesia · Asia/Jakarta · Kemenag · detected from your IP')
@@ -87,7 +96,8 @@ test('with no network and nothing cached it asks for a city', async ($, on) => {
   const w = world(on, {})
 
   await $.session.start(start)
-  expect(w.statuses.at(-1)).toBe('🕌 Location unknown: run /prayer-times <your city>')
+  await $.ui.mount(HINT as never)
+  expect(w.tails.at(-1)).toBe('🕌 Location unknown: /prayer-times <your city>')
 })
 
 test('/prayer-times <city> saves the city', async ($, on) => {

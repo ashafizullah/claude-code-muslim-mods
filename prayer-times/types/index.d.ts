@@ -9,6 +9,10 @@ export type PrayerTimesDay = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'prayer-times': { today: PrayerTimesDay | null }
+    'prayer-times': {
+      today: PrayerTimesDay | null
+      /** What the hint line under the prompt shows: the next prayer and its countdown. */
+      line: string | null
+    }
   }
 }

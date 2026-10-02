@@ -21,16 +21,18 @@ const asr = DAY.slots[3].at
 
 function world(on: On) {
   const toasts: string[] = []
-  const statuses: (string | undefined)[] = []
+  const tails: (string | undefined)[] = []
   const closed: string[] = []
   mock.store(on)
   on('ui.toast', (_, e) => {
     toasts.push(e.text)
     return { value: undefined }
   })
-  on('ui.status', (_, e) => {
-    statuses.push(e.text)
-    return { value: undefined }
+  // The engine's hint line, and the pane's frame: records the tail the mods hand it.
+  on('ui.render', ($, e) => {
+    if (e.component === 'PromptHint') tails.push(e.props.tail)
+    const { Box } = $.ui.resolve(e)
+    return <Box key="engine" />
   })
   on('ui.open', () => ({ value: { isPlaced: true } }) as never)
   on('ui.close', (_, e) => {
@@ -39,7 +41,7 @@ function world(on: On) {
   })
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
-  return { toasts, statuses, closed }
+  return { toasts, tails, closed }
 }
 
 const start = { cwd: '/', surface: 'terminal', isInteractive: true } as const
@@ -76,7 +78,14 @@ test('reminds after Asr, then the pane counts through and finishes', async ($, o
   on('state.get', (_, e, next) => (e.plugin === 'prayer-times' ? { value: { value: DAY, version: 1 } } as never : next(e)))
 
   await $.session.start(start)
-  expect(w.statuses.at(-1)).toBe('🤲 Evening adhkar · /adhkar')
+  // prayer-times, above, has already put its countdown in the tail.
+  await $.ui.mount({
+    plugin: 'adhkar',
+    surface: 'terminal',
+    component: 'PromptHint',
+    props: { isDraft: false, isWorking: false, hint: '? for shortcuts', tail: '🕌 Maghrib 17:35 · in 2:49:00' },
+  } as never)
+  expect(w.tails.at(-1)).toBe('🕌 Maghrib 17:35 · in 2:49:00 · 🤲 Evening adhkar · /adhkar')
   expect(w.toasts).toEqual([])
 
   await clock.advance(5 * 60e3)
@@ -104,6 +113,5 @@ test('reminds after Asr, then the pane counts through and finishes', async ($, o
 
   expect(w.closed).toEqual(['adhkar'])
   expect(w.toasts.at(-1)).toBe('🤲 Done. May Allah accept it from you.')
-  await clock.advance(30e3)
-  expect(w.statuses.at(-1)).toBeUndefined()
+  expect(w.tails.at(-1)).toBe('🕌 Maghrib 17:35 · in 2:49:00')
 })

@@ -11,6 +11,8 @@ declare module 'claude-code' {
       counts: Record<string, number>
       /** The sessions finished, as `${date}:${mode}`. */
       done: string[]
+      /** What the hint line under the prompt shows while a session is due. */
+      line: string | null
     }
   }
 }

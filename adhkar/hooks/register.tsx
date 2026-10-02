@@ -17,6 +17,7 @@ const mode = atom({ plugin: 'adhkar', key: 'mode' } as const, 'morning')
 const index = atom({ plugin: 'adhkar', key: 'index' } as const, 0)
 const counts = atom({ plugin: 'adhkar', key: 'counts' } as const, {})
 const done = atom({ plugin: 'adhkar', key: 'done' } as const, [])
+const line = atom({ plugin: 'adhkar', key: 'line' } as const, null)
 const prayerDay = { plugin: 'prayer-times', key: 'today' } as const
 
 const TITLE: Record<AdhkarMode, string> = { morning: 'Morning adhkar', evening: 'Evening adhkar' }
@@ -88,7 +89,8 @@ async function tick($: EngineInterface, w: Watch) {
     }
     if (!isDone && win.opens <= now && now < win.closes) open = win.mode
   }
-  $.ui.status(open ? `🤲 ${TITLE[open]} · /adhkar` : undefined)
+  const text = open ? `🤲 ${TITLE[open]} · /adhkar` : null
+  if ((await read($, line)) !== text) await update($, line, () => text)
   w.lastTick = now
 }
 
@@ -101,7 +103,9 @@ async function currentMode($: EngineInterface): Promise<AdhkarMode> {
 }
 
 async function finish($: EngineInterface) {
-  const key = `${await read($, date)}:${await read($, mode)}`
+  const m = await read($, mode)
+  const key = `${await read($, date)}:${m}`
+  if ((await read($, line))?.includes(TITLE[m])) await update($, line, () => null)
   const list = await update($, done, d => (d.includes(key) ? d : [...d, key].slice(-30)))
   await $.store.set(DONE_KEY, list)
   await $.ui.close({ id: PANE })
@@ -160,6 +164,13 @@ export const register: Register = (on, options) => {
     await $.ui.open({ id: PANE, title: TITLE[chosen], focus: true, closeOnEscape: true })
 
     return { text: `${TITLE[chosen]} opened. Keys: c count, n next, p previous, Esc close.` }
+  })
+
+  // Follows prayer-times on the hint line under the prompt: one line, no labels.
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    const text = await read($, line)
+    if (!text) return next(e)
+    return next({ ...e, props: { ...e.props, tail: e.props.tail ? `${e.props.tail} · ${text}` : text } })
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {

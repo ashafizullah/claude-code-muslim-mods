@@ -4,7 +4,7 @@ Small mods that bring prayer times, the morning and evening adhkar and a daily v
 
 | Mod | What it does |
 | --- | --- |
-| [`prayer-times`](./prayer-times) | Shows the next prayer in the status line, reminds you before it and tells you when its time begins. |
+| [`prayer-times`](./prayer-times) | Counts down to the next prayer under the prompt, reminds you before it and tells you when its time begins. |
 | [`adhkar`](./adhkar) | Reminds you of the morning and evening adhkar and opens a pane to read them, with a counter. |
 | [`daily-ayah`](./daily-ayah) | Shows one verse of the Qur'an a day in a band above the prompt. |
 
@@ -13,9 +13,9 @@ Both are Claude Code plugins built on function hooks. They need Claude Code **2.
 ## prayer-times
 
 ```
-🕌 Asr 14:49 · in 1:12:05                                  ← status line, counting down every second
-🕌 Asr in 10m, at 14:49                                     ← toast, 10 minutes before
-🕌 It's time for Asr (14:49). Time to pray.                 ← toast, when the time begins
+? for shortcuts  🕌 Asr 14:49 · in 1:12:05 · 🤲 Morning adhkar · /adhkar   ← hint line under the prompt
+🕌 Asr in 10m, at 14:49                                          ← toast, 10 minutes before
+🕌 It's time for Asr (14:49). Time to pray.                      ← toast, when the time begins
 ```
 
 `/prayer-times` prints today's schedule:
@@ -37,7 +37,9 @@ The mod works anywhere in the world. It finds your location in this order:
 1. **The `city` option, if you set it.** Either a city name (`Istanbul`, `Kuala Lumpur`), which is looked up with the [Open-Meteo geocoding API](https://open-meteo.com/en/docs/geocoding-api), or coordinates (`41.01, 28.98`), which need no network at all.
 2. **Your IP address, if `city` is blank** (the default). It asks [ipwho.is](https://ipwho.is), and [ipapi.co](https://ipapi.co) if that fails. The lookup is repeated once a day so the times follow you when you travel.
 
-The place found is cached, so later sessions start without a lookup and keep working offline. If the mod can't find you, the status line says so and asks for a city.
+The countdown sits at the end of the hint line under the prompt and ticks every second; `adhkar` adds its reminder after it on the same line, with no plugin labels.
+
+The place found is cached, so later sessions start without a lookup and keep working offline. If the mod can't find you, the hint line says so and asks for a city.
 
 To set your city from inside Claude Code:
 
@@ -85,7 +87,7 @@ Other mods can read today's times from prayer-times' state (`prayer-times.today`
 The 24 morning and evening adhkar from **Hisnul Muslim** (Fortress of the Muslim, chapter 27), each with its Arabic text, transliteration, English translation and how many times it is said.
 
 - **When:** morning adhkar from Fajr until Dhuhr, evening adhkar from Asr until Isha, taken from `prayer-times`. Without it, the mod falls back to 04:00–11:00 and 15:00–19:00 on your clock.
-- **Reminder:** a toast 15 minutes after Fajr or Asr begins (time to pray first), and `🤲 Evening adhkar · /adhkar` in the status line until you finish.
+- **Reminder:** a toast 15 minutes after Fajr or Asr begins (time to pray first), and `🤲 Evening adhkar · /adhkar` after the prayer countdown under the prompt until you finish.
 - **`/adhkar`** opens a pane on the adhkar for this time of day; `/adhkar morning` or `/adhkar evening` picks one.
 
 ```
