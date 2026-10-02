@@ -147,6 +147,8 @@ export const register: Register = (on, options) => {
       name: 'prayer-times',
       description: "Show today's prayer times, or set your city: /prayer-times <city>",
     })
+    // Versions before 0.4 pinned a status line, which outlives a reload; this one lives on the hint line.
+    $.ui.status(undefined)
     await settle($, watch)
     watch.lastTick = await $.clock.now()
     await tick($, watch)

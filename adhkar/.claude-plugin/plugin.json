@@ -1,12 +1,26 @@
 {
   "name": "adhkar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Morning and evening adhkar: a reminder when their time comes and a pane to read them with a counter.",
-  "author": { "name": "Adam Suchi Hafizullah" },
+  "author": {
+    "name": "Adam Suchi Hafizullah"
+  },
   "types": "./types/index.d.ts",
-  "dependencies": ["prayer-times"],
+  "dependencies": [
+    "prayer-times"
+  ],
   "userConfig": {
-    "reminderDelayMinutes": { "type": "number", "title": "Reminder delay (minutes)", "description": "How long after Fajr and Asr begin to remind you, leaving time to pray first.", "default": 15 },
-    "showArabic": { "type": "boolean", "title": "Show Arabic", "description": "Show the Arabic text in the pane (needs a terminal that draws Arabic well).", "default": true }
+    "reminderDelayMinutes": {
+      "type": "number",
+      "title": "Reminder delay (minutes)",
+      "description": "How long after Fajr and Asr begin to remind you, leaving time to pray first.",
+      "default": 15
+    },
+    "showArabic": {
+      "type": "boolean",
+      "title": "Show Arabic",
+      "description": "Show the Arabic text in the pane (needs a terminal that draws Arabic well).",
+      "default": true
+    }
   }
 }

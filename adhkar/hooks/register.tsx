@@ -143,6 +143,8 @@ export const register: Register = (on, options) => {
       name: 'adhkar',
       description: 'Read the morning or evening adhkar: /adhkar [morning|evening]',
     })
+    // Versions before 0.4 pinned a status line, which outlives a reload; this one lives on the hint line.
+    $.ui.status(undefined)
     const saved = (await $.store.get(DONE_KEY)) as string[] | undefined
     if (saved) await update($, done, () => saved)
     watch.lastTick = await $.clock.now()

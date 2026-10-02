@@ -27,6 +27,7 @@ function world(on: On, answers: Record<string, string | undefined>) {
     configured.push(e)
     return { value: e.value }
   })
+  on('ui.status', () => ({ value: undefined }))
   on('ui.toast', (_, e) => {
     toasts.push(e.text)
     return { value: undefined }

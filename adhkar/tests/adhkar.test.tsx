@@ -24,6 +24,7 @@ function world(on: On) {
   const tails: (string | undefined)[] = []
   const closed: string[] = []
   mock.store(on)
+  on('ui.status', () => ({ value: undefined }))
   on('ui.toast', (_, e) => {
     toasts.push(e.text)
     return { value: undefined }
