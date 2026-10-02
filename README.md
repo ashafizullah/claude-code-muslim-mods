@@ -1,5 +1,12 @@
 # Muslim mods for Claude Code
 
+[![License: MIT](https://img.shields.io/github/license/ashafizullah/claude-code-muslim-mods?color=blue)](./LICENSE)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.288-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Mods](https://img.shields.io/badge/mods-3-2E7D32)](#muslim-mods-for-claude-code)
+[![Last commit](https://img.shields.io/github/last-commit/ashafizullah/claude-code-muslim-mods)](https://github.com/ashafizullah/claude-code-muslim-mods/commits/main)
+[![Stars](https://img.shields.io/github/stars/ashafizullah/claude-code-muslim-mods?style=social)](https://github.com/ashafizullah/claude-code-muslim-mods/stargazers)
+
 Small mods that bring prayer times, the morning and evening adhkar and a daily verse of the Qur'an into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
 
 | Mod | What it does |
