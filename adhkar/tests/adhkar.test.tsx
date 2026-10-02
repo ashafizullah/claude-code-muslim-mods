@@ -113,6 +113,8 @@ test('reminds after Asr, then the pane counts through and finishes', async ($, o
   }
 
   expect(w.closed).toEqual(['adhkar'])
+  expect((await $.command.run(run('close'))).text).toBe('Adhkar closed.')
+  expect(w.closed).toEqual(['adhkar', 'adhkar'])
   expect(w.toasts.at(-1)).toBe('🤲 Done. May Allah accept it from you.')
   expect(w.tails.at(-1)).toBe('🕌 Maghrib 17:35 · in 2:49:00')
 })

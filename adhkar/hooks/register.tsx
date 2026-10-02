@@ -135,13 +135,13 @@ async function count($: EngineInterface) {
 }
 
 export const register: Register = (on, options) => {
-  const showArabic = options.showArabic !== false
+  const showArabic = options.showArabic === true
   const watch: Watch = { delayMs: Number(options.reminderDelayMinutes ?? 15) * 60e3, lastTick: 0 }
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'adhkar',
-      description: 'Read the morning or evening adhkar: /adhkar [morning|evening]',
+      description: 'Read the morning or evening adhkar: /adhkar [morning|evening|close]',
     })
     // Versions before 0.4 pinned a status line, which outlives a reload; this one lives on the hint line.
     $.ui.status(undefined)
@@ -156,6 +156,10 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'adhkar' }, async ($, e) => {
     const asked = e.args.trim().toLowerCase()
+    if (asked === 'close') {
+      await $.ui.close({ id: PANE })
+      return { text: 'Adhkar closed.' }
+    }
     const chosen: AdhkarMode =
       asked === 'morning' || asked === 'evening' ? asked : await currentMode($)
     if ((await read($, mode)) !== chosen) {
@@ -165,7 +169,7 @@ export const register: Register = (on, options) => {
     await tick($, watch)
     await $.ui.open({ id: PANE, title: TITLE[chosen], focus: true, closeOnEscape: true })
 
-    return { text: `${TITLE[chosen]} opened. Keys: c count, n next, p previous, Esc close.` }
+    return { text: `${TITLE[chosen]} opened. Keys: c count, n next, p previous, f finish, x close.` }
   })
 
   // Follows prayer-times on the hint line under the prompt: one line, no labels.
@@ -201,6 +205,7 @@ export const register: Register = (on, options) => {
           <Button key="prev" hotkey="p" label="Previous" onPress={() => step($, -1)} />
           <Button key="next" hotkey="n" label="Next" onPress={() => step($, 1)} />
           <Button key="finish" hotkey="f" label="Finish" onPress={() => finish($)} />
+          <Button key="close" hotkey="x" role="dismiss" label="Close" onPress={() => $.ui.close({ id: PANE })} />
         </Box>
       </Box>
     )

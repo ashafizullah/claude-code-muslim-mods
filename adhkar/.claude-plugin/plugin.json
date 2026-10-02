@@ -1,6 +1,6 @@
 {
   "name": "adhkar",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Morning and evening adhkar: a reminder when their time comes and a pane to read them with a counter.",
   "author": {
     "name": "Adam Suchi Hafizullah"
@@ -19,8 +19,8 @@
     "showArabic": {
       "type": "boolean",
       "title": "Show Arabic",
-      "description": "Show the Arabic text in the pane (needs a terminal that draws Arabic well).",
-      "default": true
+      "description": "Show the Arabic text in the pane. Off by default: most terminals draw Arabic as unjoined letters, left to right.",
+      "default": false
     }
   }
 }

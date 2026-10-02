@@ -96,7 +96,7 @@ Evening adhkar · 2 of 21
 Recite Surah al-Ikhlas, al-Falaq and an-Nas (112, 113, 114).
 Al-Ikhlas (112): Say, He is Allah, [who is] One, …
 
-[ 1 / 3 ]  [ Previous ]  [ Next ]  [ Finish ]
+[ 1 / 3 ]  [ Previous ]  [ Next ]  [ Finish ]  [ Close ]
 ```
 
 | Key | |
@@ -104,14 +104,14 @@ Al-Ikhlas (112): Say, He is Allah, [who is] One, …
 | `c` | Count one repetition. When a dhikr reaches its number, the pane moves on to the next. |
 | `n` / `p` | Next / previous. |
 | `f` | Finish: marks today's session done and closes the pane. |
-| `Esc` | Close the pane; your place is kept. |
+| `x` / `Esc` | Close the pane; your place is kept. `/adhkar close` does the same. |
 
 Where the evening wording differs ("amsayna" for "asbahna"), the pane shows the evening text or a note. Three are listed in the morning only (two of them, said 100 times, are once a day) and one in the evening only.
 
 | Option | Default | |
 | --- | --- | --- |
 | `reminderDelayMinutes` | `15` | How long after Fajr and Asr begin to remind you. |
-| `showArabic` | `true` | Show the Arabic text in the pane. Turn it off if your terminal draws right-to-left text poorly. |
+| `showArabic` | `false` | Show the Arabic text in the pane. Off by default: most terminals draw Arabic as unjoined letters, left to right. Turn it on if yours shapes Arabic properly. |
 
 ## daily-ayah
 
