@@ -41,7 +41,7 @@ Prayer times today (Semarang, Indonesia · Asia/Jakarta · Kemenag · detected f
 
 The mod works anywhere in the world. It finds your location in this order:
 
-1. **The `city` option, if you set it.** Either a city name (`Istanbul`, `Kuala Lumpur`), which is looked up with the [Open-Meteo geocoding API](https://open-meteo.com/en/docs/geocoding-api), or coordinates (`41.01, 28.98`), which need no network at all.
+1. **The `city` option, if you set it.** Either a city name (`Istanbul`, `Kuala Lumpur`), which is looked up with the [Open-Meteo geocoding API](https://open-meteo.com/en/docs/geocoding-api), or coordinates (`41.01, 28.98`), whose time zone is looked up once with the [Open-Meteo forecast API](https://open-meteo.com/en/docs) (offline, your machine's time zone is used until the lookup succeeds). With coordinates, `method: Auto` uses MWL; set `method` to your country's.
 2. **Your IP address, if `city` is blank** (the default). It asks [ipwho.is](https://ipwho.is), and [ipapi.co](https://ipapi.co) if that fails. The lookup is repeated once a day so the times follow you when you travel.
 
 The countdown sits at the end of the hint line under the prompt and ticks every second; `adhkar` adds its reminder after it on the same line, with no plugin labels.
@@ -54,7 +54,7 @@ To set your city from inside Claude Code:
 /prayer-times Kuala Lumpur
 ```
 
-**Privacy:** an IP lookup sends your IP address to ipwho.is (or ipapi.co). If you'd rather not, set `city` to your coordinates and the mod makes no network requests.
+**Privacy:** an IP lookup sends your IP address to ipwho.is (or ipapi.co). If you'd rather not, set `city` to your coordinates: the only request is one time-zone lookup to Open-Meteo, which carries the coordinates but not your IP's location.
 
 ### How the times are calculated
 
@@ -112,6 +112,8 @@ Al-Ikhlas (112): Say, He is Allah, [who is] One, …
 | `n` / `p` | Next / previous. |
 | `f` | Finish: marks today's session done and closes the pane. |
 | `x` / `Esc` | Close the pane; your place is kept. `/adhkar close` does the same. |
+
+Your place and counts are saved, so after closing Claude Code, `/adhkar` reopens at the same dhikr the same day. A new day starts from the top.
 
 Where the evening wording differs ("amsayna" for "asbahna"), the pane shows the evening text or a note. Three are listed in the morning only (two of them, said 100 times, are once a day) and one in the evening only.
 
@@ -227,13 +229,14 @@ Remove the paths from `CLAUDE_CODE_PLUGIN_DIRS`, restart Claude Code, and delete
 | Source | Used for | When |
 | --- | --- | --- |
 | [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) `geocoding-api.open-meteo.com/v1/search` | Turning the `city` option into coordinates and a time zone | At runtime, once per city (cached) |
+| [Open-Meteo Forecast API](https://open-meteo.com/en/docs) `api.open-meteo.com/v1/forecast?timezone=auto` | The time zone of coordinates typed in `city` | At runtime, once per coordinates (cached) |
 | [ipwho.is](https://ipwho.is) `ipwho.is/` | Finding your location from your IP when `city` is blank | At runtime, at most once a day (cached) |
 | [ipapi.co](https://ipapi.co) `ipapi.co/json/` | Fallback for ipwho.is | Only when ipwho.is fails |
 | [AlQuran Cloud API](https://alquran.cloud/api) `api.alquran.cloud/v1/ayah/{ref}/editions/quran-uthmani,en.sahih` | The Arabic text and Sahih International translation in `daily-ayah` | Once, when the mod was built; bundled in [`daily-ayah/hooks/verses.ts`](./daily-ayah/hooks/verses.ts) |
 | [Hisnul Muslim API](https://www.hisnmuslim.com) `hisnmuslim.com/api/en/27.json` | The morning and evening adhkar in `adhkar` | Once, when the mod was built; bundled in [`adhkar/hooks/adhkar.ts`](./adhkar/hooks/adhkar.ts) |
 | [Aladhan API](https://aladhan.com/prayer-times-api) `api.aladhan.com/v1/timings` | Checking the calculated prayer times | During development only; the mods never call it |
 
-Prayer times themselves are calculated on your machine; no API is called for them. With coordinates in `city`, none of the mods makes a network request.
+Prayer times themselves are calculated on your machine; no API is called for them. With coordinates in `city`, the only request is that one time-zone lookup.
 
 ## Development
 

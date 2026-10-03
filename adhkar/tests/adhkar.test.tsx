@@ -19,12 +19,12 @@ const DAY = {
 } as const
 const asr = DAY.slots[3].at
 
-function world(on: On) {
+function world(on: On, stored?: Record<string, unknown>) {
   const toasts: string[] = []
   const tails: (string | undefined)[] = []
   const closed: string[] = []
   const opened: { rows?: number }[] = []
-  mock.store(on)
+  mock.store(on, stored)
   on('ui.status', () => ({ value: undefined }))
   on('ui.toast', (_, e) => {
     toasts.push(e.text)
@@ -137,4 +137,33 @@ test('on a terminal wider than the pane, the rows are counted at the pane width'
 
   await $.command.run({ ...run('morning'), presentation: { isFullscreen: false, columns: 240 } })
   expect(w.opened.at(-1)?.rows).toBe(rowsFor('morning', 90, false))
+})
+
+const PANE_PROPS = { title: 'Evening adhkar', isFocused: true, bodyColumns: 100, placement: 'dock' } as never
+const progress = (date: string) => ({
+  progress: { date, mode: 'evening', index: 1, counts: { [`${date}:evening:75`]: 1, [`${date}:evening:76`]: 1 } },
+})
+
+test("a new session picks up today's reading where it was left", async ($, on) => {
+  mock.clock(on, { now: asr + 10 * 60e3 })
+  world(on, progress('2026-10-03'))
+  on('state.get', (_, e, next) => (e.plugin === 'prayer-times' ? { value: { value: DAY, version: 1 } } as never : next(e)))
+
+  await $.session.start(start)
+  await $.command.run(run(''))
+  const ui = await $.ui.mount({ plugin: 'adhkar', surface: 'terminal', component: 'Pane', requestId: 'adhkar', props: PANE_PROPS })
+  expect(await ui.find({ type: 'Text', text: /2 of 21/ })).toBeDefined()
+  expect((await ui.find({ key: 'count' }))?.text).toContain('1 / 3')
+})
+
+test("yesterday's reading starts over", async ($, on) => {
+  mock.clock(on, { now: asr + 10 * 60e3 })
+  world(on, progress('2026-10-02'))
+  on('state.get', (_, e, next) => (e.plugin === 'prayer-times' ? { value: { value: DAY, version: 1 } } as never : next(e)))
+
+  await $.session.start(start)
+  await $.command.run(run(''))
+  const ui = await $.ui.mount({ plugin: 'adhkar', surface: 'terminal', component: 'Pane', requestId: 'adhkar', props: PANE_PROPS })
+  expect(await ui.find({ type: 'Text', text: /1 of 21/ })).toBeDefined()
+  expect((await ui.find({ key: 'count' }))?.text).toContain('0 / 1')
 })

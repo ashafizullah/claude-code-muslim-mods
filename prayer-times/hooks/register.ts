@@ -3,7 +3,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { PrayerTimesDay } from '../types'
 
-import { IP_URLS, geocodeUrl, parseCoordinates, parseGeocode, parseIpLookup } from './location'
+import { IP_URLS, geocodeUrl, parseCoordinates, parseGeocode, parseIpLookup, parseTimeZone, timeZoneUrl } from './location'
 import type { Place } from './location'
 import { METHOD_NAMES, PRAYERS, clock, countdown, isTimeZone, localDate, methodFor, prayerTimes, span, upcoming } from './praytimes'
 import type { Asr, Method, Settings, Slot } from './praytimes'
@@ -60,9 +60,15 @@ async function locate($: EngineInterface, query: string): Promise<Place | undefi
 
   const systemZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   let place: Place | undefined
+  // A guess (a time zone not looked up) is used but not cached, so the next lookup tries again.
+  let isGuess = false
   const coordinates = parseCoordinates(query)
   if (coordinates) {
-    place = { name: `${coordinates.latitude}, ${coordinates.longitude}`, timeZone: systemZone, ...coordinates }
+    // The coordinates' own time zone, which may not be this machine's; offline, this machine's.
+    const text = await fetchJson($, timeZoneUrl(coordinates.latitude, coordinates.longitude))
+    const timeZone = text ? parseTimeZone(text) : undefined
+    isGuess = !timeZone
+    place = { name: `${coordinates.latitude}, ${coordinates.longitude}`, timeZone: timeZone ?? systemZone, ...coordinates }
   } else if (query !== '') {
     const text = await fetchJson($, geocodeUrl(query))
     place = text ? parseGeocode(text) : undefined
@@ -76,6 +82,7 @@ async function locate($: EngineInterface, query: string): Promise<Place | undefi
 
   if (!place) return cached?.query === query ? cached.place : undefined
   if (!isTimeZone(place.timeZone)) place = { ...place, timeZone: systemZone }
+  if (isGuess) return place
   await $.store.set(PLACE_KEY, { query, at: now, place } satisfies Cached)
   return place
 }

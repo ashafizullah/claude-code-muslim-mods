@@ -12,6 +12,7 @@ const PANE = 'adhkar'
 const PANE_COLUMNS = 90
 const TICK_MS = 30e3
 const DONE_KEY = 'done'
+const PROGRESS_KEY = 'progress'
 
 const date = atom({ plugin: 'adhkar', key: 'date' } as const, '')
 const mode = atom({ plugin: 'adhkar', key: 'mode' } as const, 'morning')
@@ -86,6 +87,28 @@ export function rowsFor(m: AdhkarMode, columns: number, showArabic: boolean) {
 
 type Watch = { delayMs: number; lastTick: number }
 
+/** Where the reading got to, kept across sessions so a closed Claude Code picks up at the same dhikr. */
+type Progress = { date: string; mode: AdhkarMode; index: number; counts: Record<string, number> }
+
+async function saveProgress($: EngineInterface) {
+  const progress: Progress = {
+    date: await read($, date),
+    mode: await read($, mode),
+    index: await read($, index),
+    counts: await read($, counts),
+  }
+  await $.store.set(PROGRESS_KEY, progress)
+}
+
+async function loadProgress($: EngineInterface) {
+  const saved = (await $.store.get(PROGRESS_KEY)) as Progress | undefined
+  if (!saved) return
+  await update($, date, () => saved.date)
+  await update($, mode, () => saved.mode)
+  await update($, index, () => saved.index)
+  await update($, counts, () => saved.counts)
+}
+
 async function tick($: EngineInterface, w: Watch) {
   const now = await $.clock.now()
   const { value: day } = await $.state.get(prayerDay)
@@ -94,6 +117,8 @@ async function tick($: EngineInterface, w: Watch) {
   if ((await read($, date)) !== today) {
     await update($, date, () => today)
     await update($, counts, () => ({}))
+    await update($, index, () => 0)
+    await saveProgress($)
   }
 
   const finished = await read($, done)
@@ -132,6 +157,7 @@ async function finish($: EngineInterface) {
 async function step($: EngineInterface, by: number) {
   const size = listFor(await read($, mode)).length
   await update($, index, i => Math.min(size - 1, Math.max(0, i + by)))
+  await saveProgress($)
 }
 
 /** One more repetition; a dhikr said its full number of times moves on to the next. */
@@ -143,12 +169,9 @@ async function count($: EngineInterface) {
   if (!d) return
   const key = `${await read($, date)}:${m}:${d.id}`
   const said = (await update($, counts, c => ({ ...c, [key]: Math.min(d.repeat, (c[key] ?? 0) + 1) })))[key] ?? 0
-  if (said < d.repeat) return
-  if (i < list.length - 1) {
-    await update($, index, () => i + 1)
-  } else {
-    await finish($)
-  }
+  if (said >= d.repeat && i < list.length - 1) await update($, index, () => i + 1)
+  await saveProgress($)
+  if (said >= d.repeat && i === list.length - 1) await finish($)
 }
 
 export const register: Register = (on, options) => {
@@ -164,6 +187,7 @@ export const register: Register = (on, options) => {
     $.ui.status(undefined)
     const saved = (await $.store.get(DONE_KEY)) as string[] | undefined
     if (saved) await update($, done, () => saved)
+    await loadProgress($)
     watch.lastTick = await $.clock.now()
     await tick($, watch)
     $.clock.every(TICK_MS, () => void tick($, watch))
@@ -182,6 +206,7 @@ export const register: Register = (on, options) => {
     if ((await read($, mode)) !== chosen) {
       await update($, mode, () => chosen)
       await update($, index, () => 0)
+      await saveProgress($)
     }
     await tick($, watch)
     await $.ui.open({

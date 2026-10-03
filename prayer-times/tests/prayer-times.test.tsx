@@ -134,3 +134,13 @@ test('a page that is not JSON counts as no answer', async ($, on) => {
   expect(text).toContain('Jakarta, Indonesia')
   expect(w.fetched).toContain('https://ipapi.co/json/')
 })
+
+test('coordinates get their own time zone', { options: { city: '21.42, 39.83' } }, async ($, on) => {
+  mock.clock(on, { now: START })
+  const w = world(on, { 'https://api.open-meteo.com/v1/forecast': JSON.stringify({ timezone: 'Asia/Riyadh' }) })
+
+  await $.session.start(start)
+  const { text } = await $.command.run(run(''))
+  expect(w.fetched.some(url => url.includes('latitude=21.42&longitude=39.83'))).toBe(true)
+  expect(text).toContain('21.42, 39.83 · Asia/Riyadh')
+})

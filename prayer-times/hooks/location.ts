@@ -15,6 +15,15 @@ export function parseCoordinates(text: string): { latitude: number; longitude: n
   return Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 ? { latitude, longitude } : undefined
 }
 
+/** Open-Meteo's forecast answers with the time zone of any coordinates. */
+export const timeZoneUrl = (latitude: number, longitude: number) =>
+  `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=auto`
+
+export function parseTimeZone(text: string): string | undefined {
+  const zone = (parseJson(text) as { timezone?: unknown } | undefined)?.timezone
+  return typeof zone === 'string' && zone !== '' && zone !== 'GMT' ? zone : undefined
+}
+
 export const geocodeUrl = (city: string) =>
   `https://geocoding-api.open-meteo.com/v1/search?count=1&format=json&name=${encodeURIComponent(city)}`
 
