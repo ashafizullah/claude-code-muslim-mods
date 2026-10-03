@@ -15,7 +15,7 @@ Small mods that bring prayer times, the morning and evening adhkar and a daily v
 | [`adhkar`](./adhkar) | Reminds you of the morning and evening adhkar and opens a pane to read them, with a counter. |
 | [`daily-ayah`](./daily-ayah) | Shows one verse of the Qur'an a day in a band above the prompt. |
 
-Both are Claude Code plugins built on function hooks. They need Claude Code **2.1.288 or newer**; the plugin API is in early access and may change between releases.
+**Getting started:** see [Install](#install). Each mod is a Claude Code plugin built on function hooks. They need Claude Code **2.1.288 or newer**; the plugin API is in early access and may change between releases.
 
 ## prayer-times
 
@@ -139,21 +139,19 @@ The Arabic (Uthmani script) and the **Sahih International** translation were tak
 
 ## Install
 
-Clone the repository:
+These mods are plugins of **function hooks**, a Claude Code plugin API in early access. They are loaded from a folder on disk, not from a marketplace. You need Claude Code **2.1.288 or newer** (`claude --version`).
+
+### 1. Clone the repository
 
 ```sh
 git clone https://github.com/ashafizullah/claude-code-muslim-mods.git ~/claude-code-muslim-mods
 ```
 
-**For one session**, pass each mod with `--plugin-dir`:
+`adhkar` reads today's prayer times from `prayer-times` (it lists it under `dependencies`), so load the two together. `daily-ayah` works on its own.
 
-```sh
-claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
-       --plugin-dir ~/claude-code-muslim-mods/adhkar \
-       --plugin-dir ~/claude-code-muslim-mods/daily-ayah
-```
+### 2. Load the mods
 
-**For every session**, add them to the `env` block of `~/.claude/settings.json`. Separate the paths with `:` on macOS and Linux, or `;` on Windows:
+**Every session (recommended).** Add the folders to `CLAUDE_CODE_PLUGIN_DIRS` in the `env` block of your **user** settings, `~/.claude/settings.json`:
 
 ```json
 {
@@ -163,9 +161,66 @@ claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
 }
 ```
 
-`adhkar` lists `prayer-times` under `dependencies`, so install the two together.
+- Separate the paths with `:` on macOS and Linux, `;` on Windows. Absolute paths and `~` both work.
+- Only the user settings file is read for this. A project's `.claude/settings.json` is ignored.
+- Merge the line into your existing `env` block rather than replacing the file.
+- **Restart Claude Code** afterwards. Sessions that are already open don't pick it up.
 
-Change the options with `/config`, where each mod's fields are listed. They are saved under `pluginConfigs` in your settings.
+This also works where no command-line flag can be passed, such as sessions started by the Claude desktop app or the Agent SDK.
+
+**Or from your shell.** The same variable set in the environment works too, for example in `~/.zshrc` or `~/.bashrc`:
+
+```sh
+export CLAUDE_CODE_PLUGIN_DIRS="$HOME/claude-code-muslim-mods/prayer-times:$HOME/claude-code-muslim-mods/adhkar:$HOME/claude-code-muslim-mods/daily-ayah"
+```
+
+**One session only.** Pass each folder with `--plugin-dir`:
+
+```sh
+claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
+       --plugin-dir ~/claude-code-muslim-mods/adhkar \
+       --plugin-dir ~/claude-code-muslim-mods/daily-ayah
+```
+
+### 3. Check that they loaded
+
+```sh
+claude plugin list
+```
+
+They are listed under **Session-only plugins** as `prayer-times@inline`, `adhkar@inline` and `daily-ayah@inline`, each `✔ loaded`. In a session, `/prayer-times` should print today's times and the countdown should appear under the prompt.
+
+### 4. Set your options
+
+Inside Claude Code, open `/config` (each mod's fields are listed there) or run `/plugin configure prayer-times@inline`.
+
+From the terminal:
+
+```sh
+claude plugin configure prayer-times@inline                  # show the options and which are set
+echo '{"city": "Istanbul"}' | claude plugin configure prayer-times@inline --values-stdin
+```
+
+Values are saved under `pluginConfigs` in `~/.claude/settings.json`, and changing one reloads the mod.
+
+### Updating
+
+```sh
+git -C ~/claude-code-muslim-mods pull
+```
+
+An interactive session watches these folders and reloads a mod when its files change, so a pull takes effect without a restart.
+
+### Troubleshooting
+
+- **Nothing shows up in a new terminal:** the folders aren't in `CLAUDE_CODE_PLUGIN_DIRS`, the variable is in a project settings file instead of `~/.claude/settings.json`, or Claude Code wasn't restarted after the change.
+- **A mod is missing from `claude plugin list`:** check the path, then run `claude plugin validate ~/claude-code-muslim-mods/<mod>`.
+- **It loads but misbehaves:** start Claude Code with `claude --debug`. Every hook that failed and every module that didn't load is logged with the reason.
+- **Arabic shows as separate letters:** your terminal doesn't shape Arabic. Keep `showArabic` off; `/ayah` still prints the Arabic for copying.
+
+### Uninstall
+
+Remove the paths from `CLAUDE_CODE_PLUGIN_DIRS`, restart Claude Code, and delete the folder. To drop the saved options too, remove the mods' entries under `pluginConfigs` in `~/.claude/settings.json`.
 
 ## Data sources and APIs
 
