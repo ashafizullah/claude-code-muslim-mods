@@ -1,7 +1,7 @@
 {
   "name": "daily-ayah",
-  "version": "0.1.0",
-  "description": "A verse of the Qur'an each day, in a band above the prompt.",
+  "version": "0.2.0",
+  "description": "A verse of the Qur'an in a band above the prompt, a new one each session.",
   "types": "./types/index.d.ts",
   "author": { "name": "Adam Suchi Hafizullah" },
   "userConfig": {

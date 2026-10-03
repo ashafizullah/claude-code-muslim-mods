@@ -7,13 +7,13 @@
 [![Last commit](https://img.shields.io/github/last-commit/ashafizullah/claude-code-muslim-mods)](https://github.com/ashafizullah/claude-code-muslim-mods/commits/main)
 [![Stars](https://img.shields.io/github/stars/ashafizullah/claude-code-muslim-mods?style=social)](https://github.com/ashafizullah/claude-code-muslim-mods/stargazers)
 
-Small mods that bring prayer times, the morning and evening adhkar and a daily verse of the Qur'an into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
+Small mods that bring prayer times, the morning and evening adhkar and a verse of the Qur'an into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
 
 | Mod | What it does |
 | --- | --- |
 | [`prayer-times`](./prayer-times) | Counts down to the next prayer under the prompt, reminds you before it and tells you when its time begins. |
 | [`adhkar`](./adhkar) | Reminds you of the morning and evening adhkar and opens a pane to read them, with a counter. |
-| [`daily-ayah`](./daily-ayah) | Shows one verse of the Qur'an a day in a band above the prompt. |
+| [`daily-ayah`](./daily-ayah) | Shows a verse of the Qur'an in a band above the prompt, a new one each session. |
 
 **Getting started:** see [Install](#install). Each mod is a Claude Code plugin built on function hooks. They need Claude Code **2.1.288 or newer**; the plugin API is in early access and may change between releases.
 
@@ -127,9 +127,9 @@ Where the evening wording differs ("amsayna" for "asbahna"), the pane shows the 
 — Al-Baqara (The Cow) 2:152  ↻ ×
 ```
 
-- A new verse each day at your local midnight, from 59 verses that read well on their own (2:152, 13:28, 39:53, 65:3, 94:5, …).
+- A new verse each time Claude Code starts or you `/clear`, from 59 verses that read well on their own (2:152, 13:28, 39:53, 65:3, 94:5, …).
 - **↻** shows another verse; **×** hides the band for the rest of the session.
-- `/ayah` prints today's verse with its Arabic text and brings the band back.
+- `/ayah` prints the current verse with its Arabic text and brings the band back.
 
 The Arabic (Uthmani script) and the **Sahih International** translation were taken from the [AlQuran Cloud API](https://alquran.cloud/api) and are bundled with the mod, so it needs no network.
 

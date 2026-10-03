@@ -9,6 +9,7 @@ import type { Dhikr } from './adhkar'
 type PrayerTimesDay = PluginState['prayer-times']['today']
 
 const PANE = 'adhkar'
+const PANE_COLUMNS = 90
 const TICK_MS = 30e3
 const DONE_KEY = 'done'
 
@@ -87,13 +88,14 @@ type Watch = { delayMs: number; lastTick: number }
 
 async function tick($: EngineInterface, w: Watch) {
   const now = await $.clock.now()
-  const today = localNow(now).date
+  const { value: day } = await $.state.get(prayerDay)
+  // The day turns over at midnight where the prayer times are, so it matches their windows.
+  const today = localNow(now, day?.timeZone).date
   if ((await read($, date)) !== today) {
     await update($, date, () => today)
     await update($, counts, () => ({}))
   }
 
-  const { value: day } = await $.state.get(prayerDay)
   const finished = await read($, done)
   let open: AdhkarMode | undefined
   for (const win of windowsFor(now, day)) {
@@ -114,7 +116,7 @@ async function currentMode($: EngineInterface): Promise<AdhkarMode> {
   const now = await $.clock.now()
   const { value: day } = await $.state.get(prayerDay)
   const open = windowsFor(now, day).find(w => w.opens <= now && now < w.closes)
-  return open?.mode ?? (localNow(now).hours < 12 ? 'morning' : 'evening')
+  return open?.mode ?? (localNow(now, day?.timeZone).hours < 12 ? 'morning' : 'evening')
 }
 
 async function finish($: EngineInterface) {
@@ -187,8 +189,9 @@ export const register: Register = (on, options) => {
       title: TITLE[chosen],
       focus: true,
       closeOnEscape: true,
-      rows: rowsFor(chosen, e.presentation.columns, showArabic),
-      columns: 90,
+      // The pane is never wider than PANE_COLUMNS, so the text wraps at that width at most.
+      rows: rowsFor(chosen, Math.min(PANE_COLUMNS, e.presentation.columns), showArabic),
+      columns: PANE_COLUMNS,
     })
 
     return { text: `${TITLE[chosen]} opened. Keys: c count, n next, p previous, f finish, x close.` }

@@ -4,34 +4,23 @@ import type { EngineInterface, Register } from 'claude-code'
 import { VERSES } from './verses'
 import type { Verse } from './verses'
 
-const day = atom({ plugin: 'daily-ayah', key: 'day' } as const, 0)
+const seed = atom({ plugin: 'daily-ayah', key: 'seed' } as const, -1)
 const skip = atom({ plugin: 'daily-ayah', key: 'skip' } as const, 0)
 const isHidden = atom({ plugin: 'daily-ayah', key: 'isHidden' } as const, false)
 
-const zone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'longOffset' })
-
-/** Days since the epoch, counted from midnight in this machine's time zone. */
-export function dayNumber(now: number) {
-  const name = zone.formatToParts(now).find(p => p.type === 'timeZoneName')?.value ?? 'GMT'
-  const m = /GMT([+-])(\d{2}):(\d{2})/.exec(name)
-  const offset = m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) + Number(m[3]) / 60) : 0
-  return Math.floor((now + offset * 3600e3) / 86400e3)
-}
-
-/** Steps through the list by a stride coprime to its length, so neighbouring days get unrelated verses. */
-export function verseFor(dayNo: number, skipped: number): Verse {
-  const index = (dayNo * 37 + skipped) % VERSES.length
+/** The session's verse; each ↻ steps by a stride coprime to the list's length, so the next is unrelated. */
+export function verseFor(seeded: number, skipped: number): Verse {
+  const index = (seeded + skipped * 37) % VERSES.length
   return VERSES[index] ?? VERSES[0]!
 }
 
 const cite = (v: Verse) => `${v.surah} (${v.meaning}) ${v.ref}`
 
-async function syncDay($: EngineInterface) {
-  const today = dayNumber(await $.clock.now())
-  if ((await read($, day)) !== today) {
-    await update($, day, () => today)
-    await update($, skip, () => 0)
-  }
+/** A fresh verse for every session start, which includes /clear. */
+async function newVerse($: EngineInterface) {
+  const now = await $.clock.now()
+  await update($, seed, () => now % VERSES.length)
+  await update($, skip, () => 0)
 }
 
 export const register: Register = (on, options) => {
@@ -40,16 +29,15 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'ayah',
-      description: "Show today's verse of the Qur'an",
+      description: "Show a verse of the Qur'an",
     })
-    await syncDay($)
-    $.clock.every(60e3, () => void syncDay($))
+    await newVerse($)
 
     return next(e)
   })
 
   on('command.run', { command: 'ayah' }, async $ => {
-    const v = verseFor(await read($, day), await read($, skip))
+    const v = verseFor(await read($, seed), await read($, skip))
     await update($, isHidden, () => false)
 
     return { text: `${v.arabic}\n\n"${v.english}"\n— ${cite(v)}, Sahih International` }
@@ -59,12 +47,12 @@ export const register: Register = (on, options) => {
     if (e.props.hasSurvey || (await read($, isHidden))) {
       return next(e)
     }
-    const dayNo = await read($, day)
-    if (dayNo === 0) {
+    const seeded = await read($, seed)
+    if (seeded < 0) {
       return next(e)
     }
 
-    const v = verseFor(dayNo, await read($, skip))
+    const v = verseFor(seeded, await read($, skip))
     const { Box, Button, Text } = $.ui.resolve(e)
 
     return (

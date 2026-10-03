@@ -14,6 +14,11 @@ const TICK_MS = 1e3
 const STALE_MS = 5 * 60e3
 // An IP lookup is redone daily, so the times follow a traveller.
 const IP_CACHE_MS = 24 * 3600e3
+// Until a place is found, look again this often; once found, hourly (the cache keeps that offline).
+const RETRY_MS = 60e3
+const RELOCATE_MS = 3600e3
+// How long the session start waits for the place before going on without it.
+const START_WAIT_MS = 3e3
 const PLACE_KEY = 'place'
 
 const today = atom({ plugin: 'prayer-times', key: 'today' } as const, null)
@@ -33,6 +38,8 @@ type Watch = {
   settings?: Settings
   lastTick: number
   published?: string
+  settling?: Promise<void>
+  lastSettle: number
 }
 
 async function fetchJson($: EngineInterface, url: string) {
@@ -86,9 +93,11 @@ async function publish($: EngineInterface, w: Watch, now: number, s: Settings) {
 
 async function tick($: EngineInterface, w: Watch) {
   const now = await $.clock.now()
+  relocate($, w, now)
   const s = w.settings
   if (!s) {
-    await update($, line, () => '🕌 Location unknown: /prayer-times <your city>')
+    const text = w.settling ? '🕌 Finding your location…' : '🕌 Location unknown: /prayer-times <your city>'
+    await update($, line, () => text)
     w.lastTick = now
     return
   }
@@ -132,6 +141,18 @@ async function settle($: EngineInterface, w: Watch) {
   }
 }
 
+/** Looks the place up again when due, in the background, so a missed network or a move is caught up. */
+function relocate($: EngineInterface, w: Watch, now: number) {
+  if (w.settling || now - w.lastSettle < (w.settings ? RELOCATE_MS : RETRY_MS)) return w.settling
+  w.lastSettle = now
+  w.settling = settle($, w)
+    .catch(() => undefined)
+    .finally(() => {
+      w.settling = undefined
+    })
+  return w.settling
+}
+
 export const register: Register = (on, options) => {
   const watch: Watch = {
     query: String(options.city ?? '').trim(),
@@ -140,6 +161,7 @@ export const register: Register = (on, options) => {
     ihtiyatMinutes: Number(options.ihtiyatMinutes ?? -1),
     reminderMs: Number(options.reminderMinutes ?? 10) * 60e3,
     lastTick: 0,
+    lastSettle: -Infinity,
   }
 
   on('session.start', async ($, e, next) => {
@@ -149,8 +171,10 @@ export const register: Register = (on, options) => {
     })
     // Versions before 0.4 pinned a status line, which outlives a reload; this one lives on the hint line.
     $.ui.status(undefined)
-    await settle($, watch)
     watch.lastTick = await $.clock.now()
+    // Waits a moment for the place; a slow network finishes it in the background.
+    const settling = relocate($, watch, watch.lastTick)
+    if (settling) await Promise.race([settling, $.clock.sleep(START_WAIT_MS)])
     await tick($, watch)
     $.clock.every(TICK_MS, () => void tick($, watch))
 

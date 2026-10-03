@@ -18,9 +18,18 @@ export function parseCoordinates(text: string): { latitude: number; longitude: n
 export const geocodeUrl = (city: string) =>
   `https://geocoding-api.open-meteo.com/v1/search?count=1&format=json&name=${encodeURIComponent(city)}`
 
+/** JSON, or undefined for a body that isn't (a rate limit's or captive portal's HTML page). */
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
+  }
+}
+
 /** Open-Meteo's geocoding answer. */
 export function parseGeocode(text: string): Place | undefined {
-  const hit = (JSON.parse(text) as { results?: Record<string, unknown>[] }).results?.[0]
+  const hit = (parseJson(text) as { results?: Record<string, unknown>[] } | undefined)?.results?.[0]
   if (!hit || typeof hit.latitude !== 'number' || typeof hit.longitude !== 'number') return undefined
   return {
     name: [hit.name, hit.country].filter(Boolean).join(', '),
@@ -35,8 +44,8 @@ export const IP_URLS = ['https://ipwho.is/', 'https://ipapi.co/json/'] as const
 
 /** ipwho.is or ipapi.co's answer. */
 export function parseIpLookup(text: string): Place | undefined {
-  const d = JSON.parse(text) as Record<string, unknown>
-  if (d.success === false || d.error || typeof d.latitude !== 'number' || typeof d.longitude !== 'number') {
+  const d = parseJson(text) as Record<string, unknown> | undefined
+  if (!d || typeof d !== 'object' || d.success === false || d.error || typeof d.latitude !== 'number' || typeof d.longitude !== 'number') {
     return undefined
   }
   const zone = d.timezone

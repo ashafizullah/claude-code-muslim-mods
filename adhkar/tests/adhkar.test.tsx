@@ -23,6 +23,7 @@ function world(on: On) {
   const toasts: string[] = []
   const tails: (string | undefined)[] = []
   const closed: string[] = []
+  const opened: { rows?: number }[] = []
   mock.store(on)
   on('ui.status', () => ({ value: undefined }))
   on('ui.toast', (_, e) => {
@@ -35,14 +36,17 @@ function world(on: On) {
     const { Box } = $.ui.resolve(e)
     return <Box key="engine" />
   })
-  on('ui.open', () => ({ value: { isPlaced: true } }) as never)
+  on('ui.open', (_, e) => {
+    opened.push(e as { rows?: number })
+    return { value: { isPlaced: true } } as never
+  })
   on('ui.close', (_, e) => {
     closed.push(e.id)
     return { value: undefined }
   })
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
-  return { toasts, tails, closed }
+  return { toasts, tails, closed, opened }
 }
 
 const start = { cwd: '/', surface: 'terminal', isInteractive: true } as const
@@ -125,4 +129,12 @@ test('reminds after Asr, then the pane counts through and finishes', async ($, o
   expect(w.closed).toEqual(['adhkar', 'adhkar'])
   expect(w.toasts.at(-1)).toBe('🤲 Done. May Allah accept it from you.')
   expect(w.tails.at(-1)).toBe('🕌 Maghrib 17:35 · in 2:49:00')
+})
+
+test('on a terminal wider than the pane, the rows are counted at the pane width', async ($, on) => {
+  mock.clock(on, { now: asr + 10 * 60e3 })
+  const w = world(on)
+
+  await $.command.run({ ...run('morning'), presentation: { isFullscreen: false, columns: 240 } })
+  expect(w.opened.at(-1)?.rows).toBe(rowsFor('morning', 90, false))
 })

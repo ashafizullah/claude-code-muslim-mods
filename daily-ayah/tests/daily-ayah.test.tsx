@@ -1,12 +1,13 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { dayNumber, verseFor } from '../hooks/register'
+import { VERSES } from '../hooks/verses'
+import { verseFor } from '../hooks/register'
 
-// 3 Oct 2026, 09:00 WIB.
+// 3 Oct 2026, 09:00 WIB; the verse is picked from the start time.
 const NOW = Date.parse('2026-10-03T02:00:00Z')
-const DAY = dayNumber(NOW)
+const SEED = NOW % VERSES.length
 
-test("shows today's verse above the prompt, cycles it and hides it", async ($, on) => {
+test("shows the session's verse above the prompt, cycles it and hides it", async ($, on) => {
   mock.clock(on, { now: NOW })
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
@@ -25,12 +26,12 @@ test("shows today's verse above the prompt, cycles it and hides it", async ($, o
       component: 'AbovePrompt',
       props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 100 } as never,
     })
-    const shown = verseFor(DAY, skipped)
+    const shown = verseFor(SEED, skipped)
     expect(await ui.find({ type: 'Text', text: `— ${shown.surah} (${shown.meaning}) ${shown.ref} ` })).toBeDefined()
 
     await ui.press({ key: 'another' })
     skipped += 1
-    const after = verseFor(DAY, skipped)
+    const after = verseFor(SEED, skipped)
     expect(after.ref).not.toBe(shown.ref)
     expect(await ui.find({ type: 'Text', text: `— ${after.surah} (${after.meaning}) ${after.ref} ` })).toBeDefined()
     await ui.unmount()
@@ -58,7 +59,7 @@ test('/ayah prints the verse with its citation', async ($, on) => {
     origin: { kind: 'composer' },
     presentation: { isFullscreen: false, columns: 120 },
   })
-  const v = verseFor(DAY, 0)
+  const v = verseFor(SEED, 0)
   expect(text).toContain(v.english)
   expect(text).toContain(`${v.ref}, Sahih International`)
 })

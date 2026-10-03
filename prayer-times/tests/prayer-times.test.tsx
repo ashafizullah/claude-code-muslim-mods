@@ -109,3 +109,28 @@ test('/prayer-times <city> saves the city', async ($, on) => {
   expect(w.configured).toEqual([expect.objectContaining({ key: 'prayer-times.city', value: 'Kuala Lumpur' })])
   expect(text).toBe('Prayer times will now follow Kuala Lumpur.')
 })
+
+test('looks again when the network comes back', async ($, on) => {
+  const clock = mock.clock(on, { now: START })
+  const answers: Record<string, string | undefined> = {}
+  const w = world(on, answers)
+
+  await $.session.start(start)
+  await $.ui.mount(HINT as never)
+  expect(w.tails.at(-1)).toBe('🕌 Location unknown: /prayer-times <your city>')
+
+  answers['https://ipwho.is/'] = IPWHO
+  await clock.advance(60e3)
+  await clock.advance(1e3)
+  expect(w.tails.at(-1)).toMatch(/^🕌 Asr 14:49 · in /)
+})
+
+test('a page that is not JSON counts as no answer', async ($, on) => {
+  mock.clock(on, { now: START })
+  const w = world(on, { 'https://ipwho.is/': '<html>rate limited</html>', 'https://ipapi.co/': IPWHO })
+
+  await $.session.start(start)
+  const { text } = await $.command.run(run(''))
+  expect(text).toContain('Jakarta, Indonesia')
+  expect(w.fetched).toContain('https://ipapi.co/json/')
+})
