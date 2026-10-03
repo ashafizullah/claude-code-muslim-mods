@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  mods:
+    name: ${{ matrix.mod }} · Claude Code ${{ matrix.claude }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: [prayer-times, adhkar, daily-ayah]
+        # The oldest version the README supports, and the newest.
+        claude: ['2.1.288', latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @anthropic-ai/claude-code@${{ matrix.claude }}
+      - run: claude --version
+      - run: claude plugin validate ${{ matrix.mod }}
+      - run: claude plugin test ${{ matrix.mod }}

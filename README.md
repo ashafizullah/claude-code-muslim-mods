@@ -1,5 +1,6 @@
 # Muslim mods for Claude Code
 
+[![CI](https://github.com/ashafizullah/claude-code-muslim-mods/actions/workflows/ci.yml/badge.svg)](https://github.com/ashafizullah/claude-code-muslim-mods/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/github/license/ashafizullah/claude-code-muslim-mods?color=blue)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.288-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -206,6 +207,8 @@ echo '{"city": "Istanbul"}' | claude plugin configure prayer-times@inline --valu
 Values are saved under `pluginConfigs` in `~/.claude/settings.json`, and changing one reloads the mod.
 
 ### Updating
+
+What changed in each version is in [CHANGELOG.md](./CHANGELOG.md).
 
 ```sh
 git -C ~/claude-code-muslim-mods pull
