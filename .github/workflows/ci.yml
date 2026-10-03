@@ -16,10 +16,10 @@ jobs:
         # The oldest version the README supports, and the newest.
         claude: ['2.1.288', latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - run: npm install -g @anthropic-ai/claude-code@${{ matrix.claude }}
       - run: claude --version
       - run: claude plugin validate ${{ matrix.mod }}
