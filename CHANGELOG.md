@@ -4,6 +4,9 @@ Each mod is versioned on its own; its version is in `<mod>/.claude-plugin/plugin
 
 ## prayer-times
 
+### 0.6.1
+- While it is Dhuha or Tahajud time, the hint line says so after the countdown (`☀️ Dhuha time`, `🌙 Tahajud time`). Dhuha time ends 10 minutes before Dhuhr; Tahajud time at Fajr. `sunnahReminders: false` hides it too.
+
 ### 0.6.0
 - Dhuha (sun at 4.5°) and Tahajud (the last third of the night, Maghrib to Fajr) in `/prayer-times`, with a toast when each begins. `sunnahReminders: false` turns the toasts off. The countdown and the published `today` state keep only the obligatory prayers and sunrise.
 

@@ -1,6 +1,6 @@
 {
   "name": "prayer-times",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Daily prayer times in the status line, with a reminder before each prayer and a toast when it begins.",
   "author": {
     "name": "Adam Suchi Hafizullah"
@@ -55,7 +55,7 @@
     "sunnahReminders": {
       "type": "boolean",
       "title": "Dhuha and Tahajud reminders",
-      "description": "A toast when the time for Dhuha, and for Tahajud (the last third of the night), begins.",
+      "description": "A toast when the time for Dhuha, and for Tahajud (the last third of the night), begins, and a note under the prompt while it lasts.",
       "default": true
     }
   }

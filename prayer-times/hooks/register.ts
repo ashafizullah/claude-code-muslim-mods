@@ -31,6 +31,23 @@ const SUNNAH_TOASTS: Partial<Record<Entry['name'], (at: string) => string>> = {
   Tahajud: at => `🌙 The last third of the night has begun (${at}): time for Tahajud, until Fajr.`,
   Dhuha: at => `☀️ Dhuha has begun (${at}), until shortly before Dhuhr.`,
 }
+// While a sunnah prayer's time lasts, the hint line says so after the countdown.
+// Dhuha stops 10 minutes before Dhuhr, clear of the sun's zenith (istiwa); Tahajud runs to Fajr.
+const SUNNAH_WINDOWS: Partial<Record<Entry['name'], { until: Entry['name']; marginMs: number; label: string }>> = {
+  Tahajud: { until: 'Fajr', marginMs: 0, label: '🌙 Tahajud time' },
+  Dhuha: { until: 'Dhuhr', marginMs: 10 * 60e3, label: '☀️ Dhuha time' },
+}
+
+/** The sunnah prayer whose time it is now, if any. */
+function sunnahNow(all: Entry[], now: number) {
+  for (const [i, slot] of all.entries()) {
+    const window = SUNNAH_WINDOWS[slot.name]
+    if (!window || slot.at > now) continue
+    const end = all.slice(i + 1).find(e => e.name === window.until)
+    if (end && now < end.at - window.marginMs) return window.label
+  }
+  return undefined
+}
 
 type Cached = { query: string; at: number; place: Place }
 
@@ -141,7 +158,8 @@ async function tick($: EngineInterface, w: Watch) {
 
   const next = prayers.find(p => p.at > now)
   if (next) {
-    const text = `🕌 ${next.name} ${clock(next.at, s.timeZone)} · in ${countdown(next.at - now)}`
+    const sunnah = w.sunnah ? sunnahNow(all, now) : undefined
+    const text = `🕌 ${next.name} ${clock(next.at, s.timeZone)} · in ${countdown(next.at - now)}${sunnah ? ` · ${sunnah}` : ''}`
     await update($, line, () => text)
   }
   w.lastTick = now

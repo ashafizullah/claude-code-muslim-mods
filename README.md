@@ -23,6 +23,7 @@ Small mods that bring prayer times, the morning and evening adhkar, a verse of t
 
 ```
 ? for shortcuts  🕌 Asr 14:49 · in 1:12:05 · 🤲 Morning adhkar · /adhkar   ← hint line under the prompt
+? for shortcuts  🕌 Dhuhr 11:43 · in 2:10:05 · ☀️ Dhuha time              ← while Dhuha or Tahajud lasts
 🕌 Asr in 10m, at 14:49                                          ← toast, 10 minutes before
 🕌 It's time for Asr (14:49). Time to pray.                      ← toast, when the time begins
 ☀️ Dhuha has begun (06:00), until shortly before Dhuhr.          ← toast, for Dhuha and Tahajud
@@ -83,7 +84,7 @@ Times are computed locally with the [PrayTimes.org](http://praytimes.org/calcula
 - **Ihtiyat** (a safety margin) is 2 minutes for Kemenag and JAKIM, as their published timetables use, and 0 elsewhere.
 - **Dhuha** begins when the sun is 4.5° above the horizon, as in Kemenag's timetable (about 20 minutes after sunrise).
 - **Tahajud** begins with the last third of the night, the night counted from Maghrib to Fajr. Some timetables (Aladhan's "Lastthird") count it to sunrise instead, which puts it later.
-- Dhuha and Tahajud are listed and announced, but the countdown only ever points at the five obligatory prayers.
+- Dhuha and Tahajud are listed and announced, and while their time lasts the hint line adds `☀️ Dhuha time` or `🌙 Tahajud time` after the countdown. Dhuha time ends 10 minutes before Dhuhr, clear of the sun's zenith; Tahajud time ends at Fajr. The countdown itself only ever points at the five obligatory prayers.
 
 ### Options
 
@@ -94,7 +95,7 @@ Times are computed locally with the [PrayTimes.org](http://praytimes.org/calcula
 | `asr` | `Standard` | `Standard` (Shafi'i, Maliki, Hanbali) or `Hanafi` |
 | `ihtiyatMinutes` | `-1` | Minutes added to each time; `-1` uses the method's own. |
 | `reminderMinutes` | `10` | How early to remind you; `0` turns the early reminder off. |
-| `sunnahReminders` | `true` | A toast when the time for Dhuha, and for Tahajud, begins. |
+| `sunnahReminders` | `true` | A toast when the time for Dhuha, and for Tahajud, begins, and a note on the hint line while it lasts. |
 
 Other mods can read today's times from prayer-times' state (`prayer-times.today`, typed in [`types/index.d.ts`](./prayer-times/types/index.d.ts)); `adhkar` does.
 
