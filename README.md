@@ -4,17 +4,18 @@
 [![License: MIT](https://img.shields.io/github/license/ashafizullah/claude-code-muslim-mods?color=blue)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.288-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Mods](https://img.shields.io/badge/mods-3-2E7D32)](#muslim-mods-for-claude-code)
+[![Mods](https://img.shields.io/badge/mods-4-2E7D32)](#muslim-mods-for-claude-code)
 [![Last commit](https://img.shields.io/github/last-commit/ashafizullah/claude-code-muslim-mods)](https://github.com/ashafizullah/claude-code-muslim-mods/commits/main)
 [![Stars](https://img.shields.io/github/stars/ashafizullah/claude-code-muslim-mods?style=social)](https://github.com/ashafizullah/claude-code-muslim-mods/stargazers)
 
-Small mods that bring prayer times, the morning and evening adhkar and a verse of the Qur'an into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
+Small mods that bring prayer times, the morning and evening adhkar, a verse of the Qur'an and a tasbih for when your usage limit runs out into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
 
 | Mod | What it does |
 | --- | --- |
 | [`prayer-times`](./prayer-times) | Counts down to the next prayer under the prompt, reminds you before it and tells you when its time begins. |
 | [`adhkar`](./adhkar) | Reminds you of the morning and evening adhkar and opens a pane to read them, with a counter. |
 | [`daily-ayah`](./daily-ayah) | Shows a verse of the Qur'an in a band above the prompt, a new one each session. |
+| [`tasbih`](./tasbih) | When your 5-hour or weekly limit runs out, invites you to SubhanAllah, Alhamdulillah and Allahu akbar, with a counter. |
 
 **Getting started:** see [Install](#install). Each mod is a Claude Code plugin built on function hooks. They need Claude Code **2.1.288 or newer**; the plugin API is in early access and may change between releases.
 
@@ -140,6 +141,23 @@ The Arabic (Uthmani script) and the **Sahih International** translation were tak
 | --- | --- | --- |
 | `showArabic` | `false` | Also show the Arabic in the band. Off by default because many terminals draw right-to-left text poorly; `/ayah` always includes it. |
 
+## tasbih
+
+```
+📿 5-hour limit reached · back in 1h 42m · /tasbih
+```
+
+- When the **5-hour** or **weekly** usage limit is used up, a toast invites you to dhikr and the Tasbih pane opens (on a terminal 144 columns or wider; otherwise run `/tasbih`).
+- The pane counts **SubhanAllah** ×33, **Alhamdulillah** ×33, **Allahu akbar** ×33 and the tahlil once, a hundred in all (Sahih Muslim 597). Keys: **c** count, **r** restart, **x** close.
+- The hint under the prompt says when the limit comes back, and clears itself once it has.
+- Each used-up window invites you once; a new session in the same window keeps only the hint. `/tasbih` opens the pane any time; `/tasbih demo` shows what a used-up 5-hour limit looks like, and `/tasbih close` ends it.
+
+The limits are read from what Claude Code reports, so this works on a Claude subscription (Pro, Max); with an API key there are no such limits and the mod stays quiet.
+
+| Option | Default | |
+| --- | --- | --- |
+| `showArabic` | `false` | Also show the Arabic in the pane. |
+
 ## Install
 
 These mods are plugins of **function hooks**, a Claude Code plugin API in early access. They are loaded from a folder on disk, not from a marketplace. You need Claude Code **2.1.288 or newer** (`claude --version`).
@@ -150,7 +168,7 @@ These mods are plugins of **function hooks**, a Claude Code plugin API in early 
 git clone https://github.com/ashafizullah/claude-code-muslim-mods.git ~/claude-code-muslim-mods
 ```
 
-`adhkar` reads today's prayer times from `prayer-times` (it lists it under `dependencies`), so load the two together. `daily-ayah` works on its own.
+`adhkar` reads today's prayer times from `prayer-times` (it lists it under `dependencies`), so load the two together. `daily-ayah` and `tasbih` work on their own.
 
 ### 2. Load the mods
 
@@ -159,7 +177,7 @@ git clone https://github.com/ashafizullah/claude-code-muslim-mods.git ~/claude-c
 ```json
 {
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/claude-code-muslim-mods/prayer-times:~/claude-code-muslim-mods/adhkar:~/claude-code-muslim-mods/daily-ayah"
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/claude-code-muslim-mods/prayer-times:~/claude-code-muslim-mods/adhkar:~/claude-code-muslim-mods/daily-ayah:~/claude-code-muslim-mods/tasbih"
   }
 }
 ```
@@ -174,7 +192,7 @@ This also works where no command-line flag can be passed, such as sessions start
 **Or from your shell.** The same variable set in the environment works too, for example in `~/.zshrc` or `~/.bashrc`:
 
 ```sh
-export CLAUDE_CODE_PLUGIN_DIRS="$HOME/claude-code-muslim-mods/prayer-times:$HOME/claude-code-muslim-mods/adhkar:$HOME/claude-code-muslim-mods/daily-ayah"
+export CLAUDE_CODE_PLUGIN_DIRS="$HOME/claude-code-muslim-mods/prayer-times:$HOME/claude-code-muslim-mods/adhkar:$HOME/claude-code-muslim-mods/daily-ayah:$HOME/claude-code-muslim-mods/tasbih"
 ```
 
 **One session only.** Pass each folder with `--plugin-dir`:
@@ -182,7 +200,8 @@ export CLAUDE_CODE_PLUGIN_DIRS="$HOME/claude-code-muslim-mods/prayer-times:$HOME
 ```sh
 claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
        --plugin-dir ~/claude-code-muslim-mods/adhkar \
-       --plugin-dir ~/claude-code-muslim-mods/daily-ayah
+       --plugin-dir ~/claude-code-muslim-mods/daily-ayah \
+       --plugin-dir ~/claude-code-muslim-mods/tasbih
 ```
 
 ### 3. Check that they loaded
@@ -191,7 +210,7 @@ claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
 claude plugin list
 ```
 
-They are listed under **Session-only plugins** as `prayer-times@inline`, `adhkar@inline` and `daily-ayah@inline`, each `✔ loaded`. In a session, `/prayer-times` should print today's times and the countdown should appear under the prompt.
+They are listed under **Session-only plugins** as `prayer-times@inline`, `adhkar@inline`, `daily-ayah@inline` and `tasbih@inline`, each `✔ loaded`. In a session, `/prayer-times` should print today's times and the countdown should appear under the prompt.
 
 ### 4. Set your options
 

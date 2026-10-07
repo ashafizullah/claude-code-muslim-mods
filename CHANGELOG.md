@@ -48,3 +48,9 @@ Each mod is versioned on its own; its version is in `<mod>/.claude-plugin/plugin
 
 ### 0.1.0
 - First release: a verse of the Qur'an a day in a band above the prompt, `/ayah`.
+
+## tasbih
+
+### 0.1.0
+- First release: when the 5-hour or weekly limit is used up, a toast and a pane invite you to SubhanAllah, Alhamdulillah and Allahu akbar (33 each) and the tahlil, with a counter.
+- The hint under the prompt shows when the limit comes back; `/tasbih` opens the pane any time.

@@ -1,0 +1,10 @@
+{
+  "name": "tasbih",
+  "version": "0.1.0",
+  "description": "When the 5-hour or weekly limit runs out, an invitation to dhikr: SubhanAllah, Alhamdulillah and Allahu akbar with a counter.",
+  "types": "./types/index.d.ts",
+  "author": { "name": "Adam Suchi Hafizullah" },
+  "userConfig": {
+    "showArabic": { "type": "boolean", "title": "Show Arabic", "description": "Show the Arabic text in the pane (needs a terminal that draws Arabic well).", "default": false }
+  }
+}
