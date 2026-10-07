@@ -4,6 +4,9 @@ Each mod is versioned on its own; its version is in `<mod>/.claude-plugin/plugin
 
 ## prayer-times
 
+### 0.6.0
+- Dhuha (sun at 4.5°) and Tahajud (the last third of the night, Maghrib to Fajr) in `/prayer-times`, with a toast when each begins. `sunnahReminders: false` turns the toasts off. The countdown and the published `today` state keep only the obligatory prayers and sunrise.
+
 ### 0.5.0
 - Coordinates in `city` get their own time zone, looked up once with Open-Meteo. Offline, this machine's zone is used and the lookup is retried.
 

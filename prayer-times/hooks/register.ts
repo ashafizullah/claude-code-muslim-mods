@@ -5,8 +5,8 @@ import type { PrayerTimesDay } from '../types'
 
 import { IP_URLS, geocodeUrl, parseCoordinates, parseGeocode, parseIpLookup, parseTimeZone, timeZoneUrl } from './location'
 import type { Place } from './location'
-import { METHOD_NAMES, PRAYERS, clock, countdown, isTimeZone, localDate, methodFor, prayerTimes, span, upcoming } from './praytimes'
-import type { Asr, Method, Settings, Slot } from './praytimes'
+import { METHOD_NAMES, PRAYERS, clock, countdown, isTimeZone, localDate, methodFor, prayerTimes, schedule, span, upcoming } from './praytimes'
+import type { Asr, Entry, Method, Settings } from './praytimes'
 
 // Every second, so the countdown in the status line counts down.
 const TICK_MS = 1e3
@@ -24,7 +24,13 @@ const PLACE_KEY = 'place'
 const today = atom({ plugin: 'prayer-times', key: 'today' } as const, null)
 const line = atom({ plugin: 'prayer-times', key: 'line' } as const, null)
 
-const isPrayer = (slot: Slot) => (PRAYERS as readonly string[]).includes(slot.name)
+const isPrayer = (slot: Entry) => (PRAYERS as readonly string[]).includes(slot.name)
+
+// Said when a sunnah prayer's time begins; no early reminder, since neither is missed by minutes.
+const SUNNAH_TOASTS: Partial<Record<Entry['name'], (at: string) => string>> = {
+  Tahajud: at => `🌙 The last third of the night has begun (${at}): time for Tahajud, until Fajr.`,
+  Dhuha: at => `☀️ Dhuha has begun (${at}), until shortly before Dhuhr.`,
+}
 
 type Cached = { query: string; at: number; place: Place }
 
@@ -34,6 +40,7 @@ type Watch = {
   asr: Asr
   ihtiyatMinutes: number
   reminderMs: number
+  sunnah: boolean
   place?: Place
   settings?: Settings
   lastTick: number
@@ -109,8 +116,16 @@ async function tick($: EngineInterface, w: Watch) {
     return
   }
   await publish($, w, now, s)
-  const prayers = upcoming(now, s).filter(isPrayer)
+  const all = upcoming(now, s)
+  const prayers = all.filter(isPrayer)
   const crossed = (at: number) => w.lastTick < at && at <= now && now - at < STALE_MS
+
+  if (w.sunnah) {
+    for (const slot of all) {
+      const say = SUNNAH_TOASTS[slot.name]
+      if (say && crossed(slot.at)) $.ui.toast(say(clock(slot.at, s.timeZone)), { timeoutMs: 20e3 })
+    }
+  }
 
   for (const p of prayers) {
     if (crossed(p.at)) {
@@ -167,6 +182,7 @@ export const register: Register = (on, options) => {
     asr: String(options.asr ?? 'Standard') as Asr,
     ihtiyatMinutes: Number(options.ihtiyatMinutes ?? -1),
     reminderMs: Number(options.reminderMinutes ?? 10) * 60e3,
+    sunnah: options.sunnahReminders !== false,
     lastTick: 0,
     lastSettle: -Infinity,
   }
@@ -207,7 +223,7 @@ export const register: Register = (on, options) => {
       return { text: 'Location unknown. Set it with /prayer-times <your city>, or "lat, lng".' }
     }
     const now = await $.clock.now()
-    const today = prayerTimes(now, s)
+    const today = schedule(now, s)
     const next = upcoming(now, s).filter(isPrayer).find(p => p.at > now)
     const lines = today.map(slot => {
       const mark = next && slot.at === next.at ? '  ← next' : ''

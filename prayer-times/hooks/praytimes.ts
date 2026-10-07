@@ -17,8 +17,12 @@ export type Settings = {
 export const PRAYERS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const
 export type Prayer = (typeof PRAYERS)[number]
 export type Name = Prayer | 'Sunrise'
+/** Voluntary prayers: listed and announced, but never the countdown's next prayer. */
+export const SUNNAH = ['Tahajud', 'Dhuha'] as const
+export type Sunnah = (typeof SUNNAH)[number]
 
 export type Slot = { name: Name; at: number }
+export type Entry = { name: Name | Sunnah; at: number }
 
 // Isha as a number is an angle; as a string it is minutes after Maghrib.
 // `tune` is the authority's own correction in minutes; `ihtiyat` its default safety margin.
@@ -101,8 +105,10 @@ function sun(jd: number) {
   }
 }
 
-/** Times for the calendar day holding instant `day` in the settings' time zone, as epoch ms. */
-export function prayerTimes(day: number, s: Settings): Slot[] {
+// Dhuha begins when the sun stands this high, as Kemenag's timetable has it.
+const DHUHA_ALTITUDE = 4.5
+
+function times(day: number, s: Settings): { name: Name | 'Dhuha'; at: number }[] {
   const local = new Date(day + offsetHours(day, s.timeZone) * 3600e3)
   const y = local.getUTCFullYear()
   const m = local.getUTCMonth() + 1
@@ -130,6 +136,8 @@ export function prayerTimes(day: number, s: Settings): Slot[] {
 
   const method = METHODS[s.method] ?? METHODS.MWL
   const sunrise = angleTime(0.833, 6 / 24, true)
+  // Where the sun stays low all day (polar winter), a quarter hour after sunrise.
+  const dhuha = angleTime(-DHUHA_ALTITUDE, 6 / 24, true)
   const maghrib = angleTime(0.833, 18 / 24, false)
   let fajr = angleTime(method.fajr, 5 / 24, true)
   let isha =
@@ -146,9 +154,10 @@ export function prayerTimes(day: number, s: Settings): Slot[] {
     if (Number.isNaN(isha) || isha - maghrib > ishaLimit) isha = maghrib + ishaLimit
   }
 
-  const hours: Record<Name, number> = {
+  const hours: Record<Name | 'Dhuha', number> = {
     Fajr: fajr,
     Sunrise: sunrise,
+    Dhuha: Number.isNaN(dhuha) ? sunrise + 0.25 : dhuha,
     Dhuhr: midDay(12 / 24),
     Asr: asrTime(s.asr === 'Hanafi' ? 2 : 1, 13 / 24),
     Maghrib: maghrib,
@@ -158,16 +167,33 @@ export function prayerTimes(day: number, s: Settings): Slot[] {
   const midnightUtc = Date.UTC(y, m - 1, d) - offset * 3600e3
   const shift = offset - s.longitude / 15
   const ihtiyat = s.ihtiyatMinutes < 0 ? (method.ihtiyat ?? 0) : s.ihtiyatMinutes
-  return (['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const).map(name => {
-    const margin = (name === 'Sunrise' ? -ihtiyat : ihtiyat) + (method.tune?.[name] ?? 0)
+  return (['Fajr', 'Sunrise', 'Dhuha', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const).map(name => {
+    const margin = (name === 'Sunrise' ? -ihtiyat : ihtiyat) + (name === 'Dhuha' ? 0 : (method.tune?.[name] ?? 0))
     const minutes = Math.round((hours[name] + shift) * 60 + margin)
     return { name, at: midnightUtc + minutes * 60e3 }
   })
 }
 
-/** Today's slots followed by tomorrow's, so the next prayer always exists. */
-export function upcoming(now: number, s: Settings): Slot[] {
-  return [...prayerTimes(now, s), ...prayerTimes(now + 86400e3, s)]
+/** Times for the calendar day holding instant `day` in the settings' time zone, as epoch ms. */
+export function prayerTimes(day: number, s: Settings): Slot[] {
+  return times(day, s).filter((t): t is Slot => t.name !== 'Dhuha')
+}
+
+/**
+ * The whole day in order, the sunnah prayers included: Tahajud from the last third of the night
+ * before (yesterday's Maghrib to today's Fajr), Dhuha once the sun has risen 4.5°.
+ */
+export function schedule(day: number, s: Settings): Entry[] {
+  const all = times(day, s)
+  const fajr = all.find(t => t.name === 'Fajr')!.at
+  const maghrib = times(day - 86400e3, s).find(t => t.name === 'Maghrib')!.at
+  const tahajud = Math.round((fajr - (fajr - maghrib) / 3) / 60e3) * 60e3
+  return [{ name: 'Tahajud', at: tahajud }, ...all]
+}
+
+/** Today's schedule followed by tomorrow's, so the next prayer always exists. */
+export function upcoming(now: number, s: Settings): Entry[] {
+  return [...schedule(now, s), ...schedule(now + 86400e3, s)]
 }
 
 export function clock(at: number, timeZone: string) {

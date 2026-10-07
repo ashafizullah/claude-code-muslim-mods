@@ -144,3 +144,37 @@ test('coordinates get their own time zone', { options: { city: '21.42, 39.83' } 
   expect(w.fetched.some(url => url.includes('latitude=21.42&longitude=39.83'))).toBe(true)
   expect(text).toContain('21.42, 39.83 · Asia/Riyadh')
 })
+
+test('lists Dhuha and Tahajud, and says when each begins', async ($, on) => {
+  // 00:49:30 WIB on 4 Oct: the last third of the night (Maghrib 17:49 to Fajr 04:21) begins at 00:50.
+  const clock = mock.clock(on, { now: Date.parse('2026-10-03T17:49:30Z') })
+  const w = world(on, { 'https://ipwho.is/': IPWHO })
+
+  await $.session.start(start)
+  await $.ui.mount(HINT as never)
+  await clock.advance(60e3)
+  expect(w.toasts).toEqual(['🌙 The last third of the night has begun (00:50): time for Tahajud, until Fajr.'])
+  expect(w.tails.at(-1)).toBe('🕌 Fajr 04:21 · in 3:30:30')
+
+  const { text } = await $.command.run(run(''))
+  expect(text).toContain('  Tahajud  00:50\n  Fajr     04:21  ← next\n  Sunrise  05:34\n  Dhuha    06:00\n  Dhuhr')
+})
+
+test('tells when Dhuha begins', async ($, on) => {
+  // 05:58 WIB on 3 Oct; Dhuha is at 06:00.
+  const clock = mock.clock(on, { now: Date.parse('2026-10-02T22:58:00Z') })
+  const w = world(on, { 'https://ipwho.is/': IPWHO })
+
+  await $.session.start(start)
+  await clock.advance(3 * 60e3)
+  expect(w.toasts).toEqual(['☀️ Dhuha has begun (06:00), until shortly before Dhuhr.'])
+})
+
+test('sunnahReminders off keeps Dhuha and Tahajud quiet', { options: { sunnahReminders: false } }, async ($, on) => {
+  const clock = mock.clock(on, { now: Date.parse('2026-10-03T17:49:30Z') })
+  const w = world(on, { 'https://ipwho.is/': IPWHO })
+
+  await $.session.start(start)
+  await clock.advance(60e3)
+  expect(w.toasts).toEqual([])
+})

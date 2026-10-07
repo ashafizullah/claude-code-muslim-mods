@@ -25,14 +25,17 @@ Small mods that bring prayer times, the morning and evening adhkar, a verse of t
 ? for shortcuts  🕌 Asr 14:49 · in 1:12:05 · 🤲 Morning adhkar · /adhkar   ← hint line under the prompt
 🕌 Asr in 10m, at 14:49                                          ← toast, 10 minutes before
 🕌 It's time for Asr (14:49). Time to pray.                      ← toast, when the time begins
+☀️ Dhuha has begun (06:00), until shortly before Dhuhr.          ← toast, for Dhuha and Tahajud
 ```
 
 `/prayer-times` prints today's schedule:
 
 ```
 Prayer times today (Semarang, Indonesia · Asia/Jakarta · Kemenag · detected from your IP)
+  Tahajud  00:36
   Fajr     04:07
   Sunrise  05:20
+  Dhuha    05:46
   Dhuhr    11:29  ← next
   Asr      14:36
   Maghrib  17:35
@@ -78,6 +81,9 @@ Times are computed locally with the [PrayTimes.org](http://praytimes.org/calcula
 
 - **High latitudes:** where the sun never sinks far enough for Fajr or Isha (UK and Scandinavian summers), the angle-based rule is used.
 - **Ihtiyat** (a safety margin) is 2 minutes for Kemenag and JAKIM, as their published timetables use, and 0 elsewhere.
+- **Dhuha** begins when the sun is 4.5° above the horizon, as in Kemenag's timetable (about 20 minutes after sunrise).
+- **Tahajud** begins with the last third of the night, the night counted from Maghrib to Fajr. Some timetables (Aladhan's "Lastthird") count it to sunrise instead, which puts it later.
+- Dhuha and Tahajud are listed and announced, but the countdown only ever points at the five obligatory prayers.
 
 ### Options
 
@@ -88,6 +94,7 @@ Times are computed locally with the [PrayTimes.org](http://praytimes.org/calcula
 | `asr` | `Standard` | `Standard` (Shafi'i, Maliki, Hanbali) or `Hanafi` |
 | `ihtiyatMinutes` | `-1` | Minutes added to each time; `-1` uses the method's own. |
 | `reminderMinutes` | `10` | How early to remind you; `0` turns the early reminder off. |
+| `sunnahReminders` | `true` | A toast when the time for Dhuha, and for Tahajud, begins. |
 
 Other mods can read today's times from prayer-times' state (`prayer-times.today`, typed in [`types/index.d.ts`](./prayer-times/types/index.d.ts)); `adhkar` does.
 
