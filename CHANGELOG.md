@@ -57,8 +57,17 @@ Each mod is versioned on its own; its version is in `<mod>/.claude-plugin/plugin
 
 ## hijri-date
 
+### 0.2.0
+- The next 30 days' Hijri dates are published in the mod's state (`hijri-date.ahead`), for `sunnah-fasting`.
+- The white days, and the evening before Tasu'a, Ashura and Arafah, no longer get a toast here: the reminders to fast are `sunnah-fasting`'s. The day itself is still announced, and the hint line still names it.
+
 ### 0.1.0
 - First release: the Hijri date (Umm al-Qura or tabular, with `adjustDays` for local sighting) on the hint line, turning over at Maghrib; a toast the evening before and on the day of Ramadan, the Eids, Arafah, Ashura, the white days and the other days that matter; `/hijri`, which also converts a Gregorian date.
+
+## sunnah-fasting
+
+### 0.1.0
+- First release: a toast the evening before Monday, Thursday, the white days, Arafah, Tasu'a, Ashura and the first days of Dhu al-Hijjah; `/fasting on` for a suhur reminder before Fajr, the iftar time on the hint line and a toast with the iftar dua at Maghrib; `/fasting` lists the next two weeks.
 
 ## tasbih
 

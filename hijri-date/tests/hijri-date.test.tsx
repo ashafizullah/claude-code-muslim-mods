@@ -86,20 +86,34 @@ test('occasions, the white days, and what is said of them', () => {
   expect(next[0]).toBe("Nisf Sha'ban")
 })
 
-test('the hint line and a white day announced at Maghrib, once', async ($, on) => {
+test('the hint line turns over at Maghrib; a white day is left to sunnah-fasting', async ($, on) => {
   const clock = mock.clock(on, { now: Date.parse('2026-09-23T17:00:00+07:00') })
   const w = world(on, dayIn('2026-09-23'))
+  const published: Record<string, unknown> = {}
+  on('state.set', (_, e, next) => {
+    published[e.key] = e.value
+    return next(e)
+  })
 
   await $.session.start(start)
   await $.ui.mount(HINT as never)
   expect(w.tails.at(-1)).toBe("🕌 Asr 14:40 · in 0:40:00 · 📅 12 Rabi' al-Akhir 1448")
-  expect(w.toasts).toEqual([])
 
   await clock.advance(40 * 60e3)
   expect(w.tails.at(-1)).toBe("🕌 Asr 14:40 · in 0:40:00 · 🌙 13 Rabi' al-Akhir 1448 · White day")
-  expect(w.toasts).toEqual([
-    "🌙 Tonight begins 13 Rabi' al-Akhir 1448, one of the white days (Ayyam al-Bid). Fasting tomorrow is sunnah; remember suhur.",
-  ])
+  expect(w.toasts).toEqual([])
+  const ahead = published.ahead as unknown[]
+  expect(ahead.length).toBe(30)
+  expect(ahead[1]).toEqual({ gregorian: '2026-09-24', day: 13, month: 4, year: 1448 })
+})
+
+test('an occasion announced at Maghrib, once', async ($, on) => {
+  const clock = mock.clock(on, { now: Date.parse('2027-01-22T17:00:00+07:00') })
+  const w = world(on, dayIn('2027-01-22'))
+
+  await $.session.start(start)
+  await clock.advance(40 * 60e3)
+  expect(w.toasts).toEqual(["🌙 Tonight begins 15 Sha'ban 1448, Nisf Sha'ban."])
 
   // A new session the same evening doesn't say it again.
   await $.session.start(start)

@@ -135,6 +135,12 @@ export function occasionOf(h: Hijri): Occasion | undefined {
   return undefined
 }
 
+/**
+ * Whether an occasion gets a toast: not the white days, and not the evening before a sunnah
+ * fast; the fasting reminders are sunnah-fasting's.
+ */
+export const isAnnounced = (o: Occasion, isEve: boolean) => o !== WHITE_DAYS && !(isEve && o.fast === 'sunnah' && !o.eve)
+
 /** The toast for an occasion, the evening before or on the day. */
 export function announce(h: Hijri, o: Occasion, isEve: boolean) {
   const date = format(h)

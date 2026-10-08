@@ -1,0 +1,33 @@
+{
+  "name": "sunnah-fasting",
+  "version": "0.1.0",
+  "description": "Sunnah fasting: a reminder the evening before Monday, Thursday, the white days, Arafah and Ashura, then suhur and iftar reminders on the days you fast.",
+  "author": {
+    "name": "Adam Suchi Hafizullah"
+  },
+  "types": "./types/index.d.ts",
+  "dependencies": [
+    "prayer-times",
+    "hijri-date"
+  ],
+  "userConfig": {
+    "mondayThursday": {
+      "type": "boolean",
+      "title": "Monday and Thursday",
+      "description": "Remind you the evening before every Monday and Thursday.",
+      "default": true
+    },
+    "whiteDays": {
+      "type": "boolean",
+      "title": "White days",
+      "description": "Remind you the evening before the 13th, 14th and 15th of each Hijri month (Ayyam al-Bid).",
+      "default": true
+    },
+    "suhurMinutes": {
+      "type": "number",
+      "title": "Suhur reminder (minutes before Fajr)",
+      "description": "On a day you said you'd fast, how long before Fajr to remind you of suhur; 0 turns it off.",
+      "default": 45
+    }
+  }
+}

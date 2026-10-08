@@ -4,18 +4,19 @@
 [![License: MIT](https://img.shields.io/github/license/ashafizullah/claude-code-muslim-mods?color=blue)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.288-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Mods](https://img.shields.io/badge/mods-5-2E7D32)](#muslim-mods-for-claude-code)
+[![Mods](https://img.shields.io/badge/mods-6-2E7D32)](#muslim-mods-for-claude-code)
 [![Last commit](https://img.shields.io/github/last-commit/ashafizullah/claude-code-muslim-mods)](https://github.com/ashafizullah/claude-code-muslim-mods/commits/main)
 [![Stars](https://img.shields.io/github/stars/ashafizullah/claude-code-muslim-mods?style=social)](https://github.com/ashafizullah/claude-code-muslim-mods/stargazers)
 
-Small mods that bring prayer times, the morning and evening adhkar, a verse of the Qur'an, the Hijri date and a tasbih for when your usage limit runs out into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
+Small mods that bring prayer times, the morning and evening adhkar, a verse of the Qur'an, the Hijri date, sunnah fasting reminders and a tasbih for when your usage limit runs out into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr.
 
 | Mod | What it does |
 | --- | --- |
 | [`prayer-times`](./prayer-times) | Counts down to the next prayer under the prompt, reminds you before it and tells you when its time begins. |
 | [`adhkar`](./adhkar) | Reminds you of the morning and evening adhkar and opens a pane to read them, with a counter. |
 | [`daily-ayah`](./daily-ayah) | Shows a verse of the Qur'an in a band above the prompt, a new one each session. |
-| [`hijri-date`](./hijri-date) | Shows the Hijri date under the prompt, turning over at Maghrib, and announces Ramadan, the Eids, Arafah, Ashura and the white days. |
+| [`hijri-date`](./hijri-date) | Shows the Hijri date under the prompt, turning over at Maghrib, and announces Ramadan, the Eids, Arafah, Ashura and the other days that matter. |
+| [`sunnah-fasting`](./sunnah-fasting) | Reminds you the evening before Monday, Thursday, the white days, Arafah and Ashura, then gives suhur and iftar reminders on the days you fast. |
 | [`tasbih`](./tasbih) | When your 5-hour or weekly limit runs out, invites you to SubhanAllah, Alhamdulillah and Allahu akbar, with a counter. |
 
 **Getting started:** see [Install](#install). Each mod is a Claude Code plugin built on function hooks. They need Claude Code **2.1.288 or newer**; the plugin API is in early access and may change between releases.
@@ -155,12 +156,12 @@ The Arabic (Uthmani script) and the **Sahih International** translation were tak
 ```
 ? for shortcuts  🕌 Asr 14:40 · in 0:40:00 · 📅 12 Rabi' al-Akhir 1448        ← hint line, after prayer-times
 ? for shortcuts  🕌 Isha 18:45 · in 0:50:00 · 🌙 13 Rabi' al-Akhir 1448 · White day   ← after Maghrib
-🌙 Tonight begins 13 Rabi' al-Akhir 1448, one of the white days (Ayyam al-Bid). Fasting tomorrow is sunnah; remember suhur.
+🌙 Tonight begins 15 Sha'ban 1448, Nisf Sha'ban.                  ← toast, the evening before
 ```
 
 - The Islamic day begins at sunset, so the date turns over at **Maghrib**, read from `prayer-times` (🌙 until midnight). Until `prayer-times` has found your place, it turns over at midnight.
-- A toast the **evening before** and **on the day** of the Islamic New Year, Tasu'a and Ashura, Nisf Sha'ban, the start of Ramadan and its last ten nights, Eid al-Fitr and the six days of Shawwal, the first ten days of Dhu al-Hijjah, Arafah, Eid al-Adha and the days of Tashriq, and the white days (13th to 15th) of every month but Ramadan. Each is said once, even across sessions.
-- The date and today's occasion are published in the mod's state (`hijri-date.today`) for other mods to read.
+- A toast the **evening before** and **on the day** of the Islamic New Year, Nisf Sha'ban, the start of Ramadan and its last ten nights, Eid al-Fitr and the six days of Shawwal, the first ten days of Dhu al-Hijjah, Eid al-Adha and the days of Tashriq, and on the day of Tasu'a, Ashura and Arafah. Each is said once, even across sessions. The reminders to fast the evening before are [`sunnah-fasting`](#sunnah-fasting)'s.
+- The date is published in the mod's state for other mods to read: today's (`hijri-date.today`) and the next 30 days' (`hijri-date.ahead`).
 
 `/hijri` prints today's date and what is coming:
 
@@ -186,6 +187,27 @@ The dates are calculated, not sighted. Countries that begin the month by moon si
 | `adjustDays` | `0` | Days to add or subtract, e.g. `-1` or `1`, to follow local sighting. |
 | `hintLine` | `true` | Show the date under the prompt. |
 | `announceDays` | `true` | The toasts for the days above. |
+
+## sunnah-fasting
+
+```
+🌙 Tomorrow is Thursday and a white day: fasting is sunnah. /fasting on to fast it, with suhur and iftar reminders.
+🍽 Suhur: Fajr is at 04:10, in 45m.                               ← toast, on a day you fast
+? for shortcuts  🕌 Asr 14:40 · in 1:10:00 · 📅 13 Rabi' al-Akhir 1448 · White day · 🍽 Fasting · iftar 17:35
+🍽 It's Maghrib: time to break your fast. Dhahaba al-zama'u ...    ← toast, at Maghrib
+```
+
+- **The evening before** (from Maghrib), a toast when tomorrow is a sunnah fast: Monday or Thursday, a white day (13th to 15th), Arafah, Tasu'a, Ashura or the first days of Dhu al-Hijjah. No reminders during Ramadan, and none for the Eids or the days of Tashriq, when fasting is forbidden.
+- **`/fasting on`** says you'll fast: today until Maghrib, tomorrow after it (or `/fasting on tomorrow`, `/fasting on 2026-10-15`). On that day you get a suhur toast before Fajr, the iftar time on the hint line and a toast at Maghrib with the iftar dua. `/fasting off` cancels it.
+- **`/fasting`** lists the sunnah fasts in the next two weeks, with a ✓ on the days you said you'd fast.
+
+The Hijri dates come from `hijri-date` and the times from `prayer-times`, so it follows their settings (`adjustDays` included).
+
+| Option | Default | |
+| --- | --- | --- |
+| `mondayThursday` | `true` | Remind you before every Monday and Thursday. |
+| `whiteDays` | `true` | Remind you before the white days. |
+| `suhurMinutes` | `45` | How long before Fajr the suhur reminder comes; `0` turns it off. |
 
 ## tasbih
 
@@ -214,7 +236,7 @@ These mods are plugins of **function hooks**, a Claude Code plugin API in early 
 git clone https://github.com/ashafizullah/claude-code-muslim-mods.git ~/claude-code-muslim-mods
 ```
 
-`adhkar` and `hijri-date` read today's prayer times from `prayer-times` (they list it under `dependencies`), so load them together with it. `daily-ayah` and `tasbih` work on their own.
+`adhkar`, `hijri-date` and `sunnah-fasting` read today's prayer times from `prayer-times`, and `sunnah-fasting` the Hijri dates from `hijri-date` (each lists them under `dependencies`), so load them together. `daily-ayah` and `tasbih` work on their own.
 
 ### 2. Load the mods
 
@@ -223,7 +245,7 @@ git clone https://github.com/ashafizullah/claude-code-muslim-mods.git ~/claude-c
 ```json
 {
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/claude-code-muslim-mods/prayer-times:~/claude-code-muslim-mods/adhkar:~/claude-code-muslim-mods/daily-ayah:~/claude-code-muslim-mods/hijri-date:~/claude-code-muslim-mods/tasbih"
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/claude-code-muslim-mods/prayer-times:~/claude-code-muslim-mods/adhkar:~/claude-code-muslim-mods/daily-ayah:~/claude-code-muslim-mods/hijri-date:~/claude-code-muslim-mods/sunnah-fasting:~/claude-code-muslim-mods/tasbih"
   }
 }
 ```
@@ -238,7 +260,7 @@ This also works where no command-line flag can be passed, such as sessions start
 **Or from your shell.** The same variable set in the environment works too, for example in `~/.zshrc` or `~/.bashrc`:
 
 ```sh
-export CLAUDE_CODE_PLUGIN_DIRS="$HOME/claude-code-muslim-mods/prayer-times:$HOME/claude-code-muslim-mods/adhkar:$HOME/claude-code-muslim-mods/daily-ayah:$HOME/claude-code-muslim-mods/hijri-date:$HOME/claude-code-muslim-mods/tasbih"
+export CLAUDE_CODE_PLUGIN_DIRS="$HOME/claude-code-muslim-mods/prayer-times:$HOME/claude-code-muslim-mods/adhkar:$HOME/claude-code-muslim-mods/daily-ayah:$HOME/claude-code-muslim-mods/hijri-date:$HOME/claude-code-muslim-mods/sunnah-fasting:$HOME/claude-code-muslim-mods/tasbih"
 ```
 
 **One session only.** Pass each folder with `--plugin-dir`:
@@ -248,6 +270,7 @@ claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
        --plugin-dir ~/claude-code-muslim-mods/adhkar \
        --plugin-dir ~/claude-code-muslim-mods/daily-ayah \
        --plugin-dir ~/claude-code-muslim-mods/hijri-date \
+       --plugin-dir ~/claude-code-muslim-mods/sunnah-fasting \
        --plugin-dir ~/claude-code-muslim-mods/tasbih
 ```
 
@@ -257,7 +280,7 @@ claude --plugin-dir ~/claude-code-muslim-mods/prayer-times \
 claude plugin list
 ```
 
-They are listed under **Session-only plugins** as `prayer-times@inline`, `adhkar@inline`, `daily-ayah@inline`, `hijri-date@inline` and `tasbih@inline`, each `✔ loaded`. In a session, `/prayer-times` should print today's times and the countdown should appear under the prompt.
+They are listed under **Session-only plugins** as `prayer-times@inline`, `adhkar@inline`, `daily-ayah@inline`, `hijri-date@inline`, `sunnah-fasting@inline` and `tasbih@inline`, each `✔ loaded`. In a session, `/prayer-times` should print today's times and the countdown should appear under the prompt.
 
 ### 4. Set your options
 

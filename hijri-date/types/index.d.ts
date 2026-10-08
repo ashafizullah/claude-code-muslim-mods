@@ -11,10 +11,15 @@ export type HijriDay = {
   isEve: boolean
 }
 
+/** The Hijri date whose daytime falls on a Gregorian date. */
+export type HijriDate = { gregorian: string; day: number; month: number; year: number }
+
 declare module 'claude-code' {
   interface PluginState {
     'hijri-date': {
       today: HijriDay | null
+      /** Today (the Gregorian date, by daytime) and the 29 days after it. */
+      ahead: HijriDate[]
       /** What the hint line under the prompt shows. */
       line: string | null
     }

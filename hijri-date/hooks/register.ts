@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, PluginState, Register } from 'claude-code'
 
-import type { HijriDay } from '../types'
+import type { HijriDate, HijriDay } from '../types'
 import {
   CALENDARS,
   MONTHS,
@@ -11,6 +11,7 @@ import {
   format,
   gregorianLabel,
   hijriOf,
+  isAnnounced,
   localDate,
   occasionOf,
   shortName,
@@ -22,11 +23,14 @@ import type { Calendar } from './hijri'
 type PrayerTimesDay = PluginState['prayer-times']['today']
 
 const TICK_MS = 30e3
+// How many days ahead are published, for other mods (sunnah-fasting).
+const AHEAD_DAYS = 30
 // The toasts already given, kept across sessions so a new session doesn't repeat them.
 const ANNOUNCED_KEY = 'announced'
 
 const today = atom({ plugin: 'hijri-date', key: 'today' } as const, null)
 const line = atom({ plugin: 'hijri-date', key: 'line' } as const, null)
+const ahead = atom({ plugin: 'hijri-date', key: 'ahead' } as const, [])
 const prayerDay = { plugin: 'prayer-times', key: 'today' } as const
 
 type Settings = { calendar: Calendar; adjustDays: number; hintLine: boolean; announceDays: boolean }
@@ -52,13 +56,21 @@ async function tick($: EngineInterface, s: Settings) {
     await update($, today, () => h)
   }
 
+  if ((await read($, ahead))[0]?.gregorian !== h.gregorian) {
+    const days: HijriDate[] = Array.from({ length: AHEAD_DAYS }, (_, i) => {
+      const gregorian = addDays(h.gregorian, i)
+      return { gregorian, ...hijriOf(gregorian, s.calendar, s.adjustDays) }
+    })
+    await update($, ahead, () => days)
+  }
+
   const occasion = occasionOf(h)
   if (s.hintLine) {
     const text = `${h.isEve ? '🌙' : '📅'} ${format(h)}${occasion ? ` · ${shortName(occasion)}` : ''}`
     if ((await read($, line)) !== text) await update($, line, () => text)
   }
 
-  if (s.announceDays && occasion) {
+  if (s.announceDays && occasion && isAnnounced(occasion, h.isEve)) {
     const key = `${h.year}-${h.month}-${h.day}:${h.isEve ? 'eve' : 'day'}`
     const announced = ((await $.store.get(ANNOUNCED_KEY)) as string[] | undefined) ?? []
     if (!announced.includes(key)) {
