@@ -56,11 +56,14 @@ export function describe(reasons: Reason[]) {
 
 export const isReminded = (f: FastDay) => f.kind === 'sunnah' && f.reasons.some(r => r.remind)
 
-/** A Gregorian date as `Thu 8 Oct`. */
-export const dateLabel = (ymd: string) =>
-  new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' })
-    .format(Date.parse(`${ymd}T12:00:00Z`))
-    .replace(',', '')
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** A Gregorian date as `Thu 8 Oct`, spelled the same whatever the runtime's locale data. */
+export function dateLabel(ymd: string) {
+  const d = new Date(`${ymd}T12:00:00Z`)
+  return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`
+}
 
 const zones = new Map<string, Intl.DateTimeFormat>()
 

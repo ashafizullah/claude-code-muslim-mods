@@ -164,17 +164,13 @@ export function upcomingOccasions(ymd: string, calendar: Calendar, adjustDays: n
   return found
 }
 
-/** A Gregorian date as `Thu 8 Oct 2026`. */
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const GREGORIAN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** A Gregorian date as `Thu 8 Oct 2026`, spelled the same whatever the runtime's locale data. */
 export function gregorianLabel(ymd: string) {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'UTC',
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-    .format(Date.parse(`${ymd}T12:00:00Z`))
-    .replace(',', '')
+  const d = new Date(`${ymd}T12:00:00Z`)
+  return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${GREGORIAN_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`
 }
 
 export const daysBetween = (from: string, to: string) => toDays(to) - toDays(from)
