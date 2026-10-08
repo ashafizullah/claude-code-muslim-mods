@@ -1,0 +1,42 @@
+{
+  "name": "hijri-date",
+  "version": "0.1.0",
+  "description": "Today's Hijri date under the prompt, turning over at Maghrib, with a toast on the days that matter: Ramadan, the Eids, Arafah, Ashura and the white days.",
+  "author": {
+    "name": "Adam Suchi Hafizullah"
+  },
+  "types": "./types/index.d.ts",
+  "dependencies": [
+    "prayer-times"
+  ],
+  "userConfig": {
+    "calendar": {
+      "type": "string",
+      "title": "Calendar",
+      "description": "Umm al-Qura (Saudi Arabia's, the default) or the arithmetical tabular calendar.",
+      "options": [
+        "Umm al-Qura",
+        "Tabular"
+      ],
+      "default": "Umm al-Qura"
+    },
+    "adjustDays": {
+      "type": "number",
+      "title": "Adjust (days)",
+      "description": "Where the month begins by local moon sighting (Indonesia, Malaysia, Pakistan…), set -1 or 1 to match your country's announcement.",
+      "default": 0
+    },
+    "hintLine": {
+      "type": "boolean",
+      "title": "Show under the prompt",
+      "description": "Show the Hijri date on the hint line under the prompt.",
+      "default": true
+    },
+    "announceDays": {
+      "type": "boolean",
+      "title": "Announce special days",
+      "description": "A toast the evening before and on the day of Ramadan, the Eids, Arafah, Ashura, the white days and the other days that matter.",
+      "default": true
+    }
+  }
+}

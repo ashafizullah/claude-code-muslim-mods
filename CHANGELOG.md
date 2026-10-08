@@ -55,6 +55,11 @@ Each mod is versioned on its own; its version is in `<mod>/.claude-plugin/plugin
 ### 0.1.0
 - First release: a verse of the Qur'an a day in a band above the prompt, `/ayah`.
 
+## hijri-date
+
+### 0.1.0
+- First release: the Hijri date (Umm al-Qura or tabular, with `adjustDays` for local sighting) on the hint line, turning over at Maghrib; a toast the evening before and on the day of Ramadan, the Eids, Arafah, Ashura, the white days and the other days that matter; `/hijri`, which also converts a Gregorian date.
+
 ## tasbih
 
 ### 0.1.0

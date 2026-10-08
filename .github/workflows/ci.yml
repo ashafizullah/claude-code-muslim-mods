@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mod: [prayer-times, adhkar, daily-ayah, tasbih]
+        mod: [prayer-times, adhkar, daily-ayah, hijri-date, tasbih]
         # The oldest version the README supports, and the newest.
         claude: ['2.1.288', latest]
     steps:
