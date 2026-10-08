@@ -81,11 +81,10 @@ test('what a day is: Monday and Thursday, the white days, Arafah; the Eids and R
   expect(fastOn('2026-09-24', undefined, { mondayThursday: false, whiteDays: true }).kind).toBe('none')
 })
 
-test('reminded the evening before, then suhur, the fasting day and iftar', async ($, on) => {
-  let now = Date.parse('2026-09-23T17:00:00+07:00')
-  const mocked = mock.clock(on, { now })
-  const clock = { advance: (ms: number) => ((now += ms), mocked.advance(ms)) }
-  const w = world(on, () => now)
+// A day and a night of 10-second ticks: slow on a CI runner.
+test('reminded the evening before, then suhur, the fasting day and iftar', { timeoutMs: 60e3 }, async ($, on) => {
+  const clock = mock.clock(on, { now: Date.parse('2026-09-23T17:00:00+07:00') })
+  const w = world(on, clock.now)
   await $.session.start(start)
   await $.ui.mount(HINT as never)
   expect(w.toasts).toEqual([])
