@@ -148,9 +148,12 @@ export const register: Register = (on, options) => {
       }
       const f = c.fastFor(target, s)
       if (f.kind === 'forbidden') return { text: `${dateLabel(target)} is ${f.why}: fasting is forbidden on it.` }
+      if (f.kind === 'ramadan') {
+        return { text: `${dateLabel(target)} is in Ramadan: ramadan-mode gives the suhur and iftar reminders every day.` }
+      }
       await setIntent($, target, true, c.today)
       await tick($, watch)
-      const why = f.kind === 'sunnah' ? ` (${describe(f.reasons)})` : f.kind === 'ramadan' ? ' (Ramadan)' : ''
+      const why = f.kind === 'sunnah' ? ` (${describe(f.reasons)})` : ''
       const isToday = target === c.today
       const suhur = s.suhurMs > 0 && !(isToday && c.fajr !== undefined && now >= c.fajr)
         ? `a suhur reminder ${Math.round(s.suhurMs / 60e3)} minutes before Fajr and `

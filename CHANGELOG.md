@@ -66,8 +66,16 @@ Each mod is versioned on its own; its version is in `<mod>/.claude-plugin/plugin
 
 ## sunnah-fasting
 
+### 0.1.1
+- `/fasting on` turns down a day in Ramadan: `ramadan-mode` gives its suhur and iftar reminders every day.
+
 ### 0.1.0
 - First release: a toast the evening before Monday, Thursday, the white days, Arafah, Tasu'a, Ashura and the first days of Dhu al-Hijjah; `/fasting on` for a suhur reminder before Fajr, the iftar time on the hint line and a toast with the iftar dua at Maghrib; `/fasting` lists the next two weeks.
+
+## ramadan-mode
+
+### 0.1.0
+- First release: in Ramadan, a countdown to imsak and iftar on the hint line; toasts for suhur, imsak, iftar (with its dua) and Tarawih; the odd nights of the last ten with the dua for Laylat al-Qadr; a zakat al-fitr reminder; `/ramadan`.
 
 ## tasbih
 
