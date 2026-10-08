@@ -6,13 +6,12 @@ on:
   pull_request:
 
 jobs:
-  mods:
-    name: ${{ matrix.mod }} · Claude Code ${{ matrix.claude }}
+  muslim-mods:
+    name: muslim-mods · Claude Code ${{ matrix.claude }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        mod: [prayer-times, adhkar, daily-ayah, hijri-date, sunnah-fasting, ramadan-mode, tasbih]
         # The oldest version the README supports, and the newest.
         claude: ['2.1.288', latest]
     steps:
@@ -22,5 +21,5 @@ jobs:
           node-version: 24
       - run: npm install -g @anthropic-ai/claude-code@${{ matrix.claude }}
       - run: claude --version
-      - run: claude plugin validate ${{ matrix.mod }}
-      - run: claude plugin test ${{ matrix.mod }}
+      - run: claude plugin validate muslim-mods
+      - run: claude plugin test muslim-mods

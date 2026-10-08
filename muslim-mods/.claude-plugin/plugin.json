@@ -1,0 +1,186 @@
+{
+  "name": "muslim-mods",
+  "version": "1.0.0",
+  "description": "Prayer times, the Hijri date, adhkar, a daily ayah, sunnah fasting, Ramadan, Jumu'ah and tasbih in Claude Code, each switched on or off from one dashboard: /muslim.",
+  "author": {
+    "name": "Adam Suchi Hafizullah"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "prayerTimes": {
+      "type": "boolean",
+      "title": "Prayer times",
+      "description": "The countdown to the next prayer, a reminder before it and a toast when it begins. Hijri date, adhkar, fasting, Ramadan and Jumu'ah read their times from it.",
+      "default": true
+    },
+    "hijriDate": {
+      "type": "boolean",
+      "title": "Hijri date",
+      "description": "The Hijri date under the prompt and a toast on the days that matter. Sunnah fasting and Ramadan read their dates from it.",
+      "default": true
+    },
+    "adhkar": {
+      "type": "boolean",
+      "title": "Adhkar",
+      "description": "The morning and evening adhkar: a reminder, and /adhkar to read them.",
+      "default": true
+    },
+    "dailyAyah": {
+      "type": "boolean",
+      "title": "Daily ayah",
+      "description": "A verse of the Qur'an above the prompt, a new one each session.",
+      "default": true
+    },
+    "sunnahFasting": {
+      "type": "boolean",
+      "title": "Sunnah fasting",
+      "description": "A reminder the evening before a sunnah fast, then suhur and iftar on the days you fast.",
+      "default": true
+    },
+    "ramadan": {
+      "type": "boolean",
+      "title": "Ramadan",
+      "description": "In Ramadan, the countdown to imsak and iftar, suhur, iftar and Tarawih reminders.",
+      "default": true
+    },
+    "jumuah": {
+      "type": "boolean",
+      "title": "Jumu'ah",
+      "description": "Salawat and Al-Kahf from Thursday's Maghrib, the Friday prayer and the last hour after Asr.",
+      "default": true
+    },
+    "tasbih": {
+      "type": "boolean",
+      "title": "Tasbih",
+      "description": "When the 5-hour or weekly limit runs out, an invitation to dhikr with a counter.",
+      "default": true
+    },
+    "city": {
+      "type": "string",
+      "title": "City",
+      "description": "Your city (\"Istanbul\") or coordinates (\"41.01, 28.98\"). Leave blank to detect it from your IP.",
+      "default": ""
+    },
+    "method": {
+      "type": "string",
+      "title": "Calculation method",
+      "description": "The Fajr and Isha angles. Auto picks the one used in your country.",
+      "options": [
+        "Auto",
+        "Kemenag",
+        "JAKIM",
+        "MWL",
+        "ISNA",
+        "Egypt",
+        "Makkah",
+        "Karachi",
+        "Diyanet"
+      ],
+      "default": "Auto"
+    },
+    "asr": {
+      "type": "string",
+      "title": "Asr juristic method",
+      "description": "Standard (Shafi'i, Maliki, Hanbali) or Hanafi.",
+      "options": [
+        "Standard",
+        "Hanafi"
+      ],
+      "default": "Standard"
+    },
+    "ihtiyatMinutes": {
+      "type": "number",
+      "title": "Ihtiyat (minutes)",
+      "description": "Safety margin added to each prayer time; -1 uses the method's own (2 for Kemenag and JAKIM, 0 elsewhere).",
+      "default": -1
+    },
+    "reminderMinutes": {
+      "type": "number",
+      "title": "Reminder (minutes before)",
+      "description": "How early to remind you; 0 turns the early reminder off.",
+      "default": 10
+    },
+    "sunnahReminders": {
+      "type": "boolean",
+      "title": "Dhuha and Tahajud reminders",
+      "description": "A toast when the time for Dhuha, and for Tahajud (the last third of the night), begins, and a note under the prompt while it lasts.",
+      "default": true
+    },
+    "calendar": {
+      "type": "string",
+      "title": "Calendar",
+      "description": "Umm al-Qura (Saudi Arabia's, the default) or the arithmetical tabular calendar.",
+      "options": [
+        "Umm al-Qura",
+        "Tabular"
+      ],
+      "default": "Umm al-Qura"
+    },
+    "adjustDays": {
+      "type": "number",
+      "title": "Adjust (days)",
+      "description": "Where the month begins by local moon sighting (Indonesia, Malaysia, Pakistan…), set -1 or 1 to match your country's announcement.",
+      "default": 0
+    },
+    "announceDays": {
+      "type": "boolean",
+      "title": "Announce special days",
+      "description": "A toast for Ramadan, the Eids, Arafah, Ashura and the other days that matter.",
+      "default": true
+    },
+    "reminderDelayMinutes": {
+      "type": "number",
+      "title": "Reminder delay (minutes)",
+      "description": "How long after Fajr and Asr begin to remind you, leaving time to pray first.",
+      "default": 15
+    },
+    "showArabic": {
+      "type": "boolean",
+      "title": "Show Arabic",
+      "description": "Show the Arabic text in the adhkar and tasbih panes and the daily ayah. Off by default: many terminals draw Arabic as unjoined letters, left to right.",
+      "default": false
+    },
+    "mondayThursday": {
+      "type": "boolean",
+      "title": "Monday and Thursday",
+      "description": "Remind you the evening before every Monday and Thursday.",
+      "default": true
+    },
+    "whiteDays": {
+      "type": "boolean",
+      "title": "White days",
+      "description": "Remind you the evening before the 13th, 14th and 15th of each Hijri month (Ayyam al-Bid).",
+      "default": true
+    },
+    "suhurMinutes": {
+      "type": "number",
+      "title": "Suhur reminder (minutes before Fajr)",
+      "description": "On a day you fast (Ramadan, or a sunnah fast you said you'd keep), how long before Fajr to remind you of suhur; 0 turns it off.",
+      "default": 45
+    },
+    "imsakMinutes": {
+      "type": "number",
+      "title": "Imsak (minutes before Fajr)",
+      "description": "When imsak is, before Fajr (10 in Indonesia and Malaysia); 0 turns the imsak reminder off.",
+      "default": 10
+    },
+    "tarawih": {
+      "type": "boolean",
+      "title": "Tarawih reminder",
+      "description": "A toast at Isha on each night of Ramadan.",
+      "default": true
+    },
+    "jumuahReminderMinutes": {
+      "type": "number",
+      "title": "Friday prayer reminder (minutes before Dhuhr)",
+      "description": "For those who attend the Friday prayer: how early to remind you to get ready; 0 turns it off.",
+      "default": 45
+    },
+    "kahf": {
+      "type": "boolean",
+      "title": "Al-Kahf on the hint line",
+      "description": "Show Al-Kahf under the prompt from Thursday's Maghrib until you've read it (/jumuah read) or Friday's Maghrib.",
+      "default": true
+    }
+  }
+}
