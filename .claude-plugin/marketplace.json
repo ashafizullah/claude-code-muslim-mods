@@ -1,0 +1,23 @@
+{
+  "name": "muslim-mods",
+  "owner": {
+    "name": "Adam Suchi Hafizullah"
+  },
+  "metadata": {
+    "description": "Prayer times, the Hijri date, adhkar, a daily ayah, sunnah fasting, Ramadan, Jumu'ah and tasbih for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "muslim-mods",
+      "source": "./muslim-mods",
+      "description": "Prayer times, the Hijri date, adhkar, a daily ayah, sunnah fasting, Ramadan, Jumu'ah and tasbih in Claude Code, each switched on or off from one dashboard: /muslim.",
+      "version": "1.0.1",
+      "author": { "name": "Adam Suchi Hafizullah" },
+      "homepage": "https://github.com/ashafizullah/claude-code-muslim-mods",
+      "repository": "https://github.com/ashafizullah/claude-code-muslim-mods",
+      "license": "MIT",
+      "keywords": ["islam", "muslim", "prayer-times", "hijri", "adhkar", "quran", "ramadan"],
+      "category": "productivity"
+    }
+  ]
+}

@@ -295,7 +295,28 @@ The limits are read from what Claude Code reports, so this works on a Claude sub
 
 ## Install
 
-The plugin is built on **function hooks**, a Claude Code plugin API in early access, and is loaded from a folder on disk, not from a marketplace. You need Claude Code **2.1.288 or newer** (`claude --version`).
+The plugin is built on **function hooks**, a Claude Code plugin API in early access. You need Claude Code **2.1.288 or newer** (`claude --version`).
+
+### From the marketplace
+
+This repository is also a plugin marketplace. Inside Claude Code:
+
+```
+/plugin install muslim-mods --marketplace ashafizullah/claude-code-muslim-mods
+```
+
+Or from the terminal:
+
+```sh
+claude plugin marketplace add ashafizullah/claude-code-muslim-mods
+claude plugin install muslim-mods@muslim-mods
+```
+
+Installed this way, the plugin is `muslim-mods@muslim-mods`: use that name with `/plugin configure`, and update with `claude plugin marketplace update muslim-mods` then `claude plugin update muslim-mods@muslim-mods`. Uninstall with `claude plugin uninstall muslim-mods@muslim-mods`.
+
+### From a folder
+
+The steps below load the plugin from a clone instead, which a `git pull` updates.
 
 ### 1. Clone the repository
 
