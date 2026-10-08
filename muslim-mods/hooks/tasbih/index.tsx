@@ -13,6 +13,8 @@ const reached = atom({ plugin: 'muslim-mods', key: 'tasbihReached' } as const, [
 const index = atom({ plugin: 'muslim-mods', key: 'tasbihIndex' } as const, 0)
 const counts = atom({ plugin: 'muslim-mods', key: 'tasbihCounts' } as const, {})
 const line = atom({ plugin: 'muslim-mods', key: 'tasbihLine' } as const, null)
+// Set by /tasbih demo, whose made-up limit /tasbih close takes away again; in state, so a reload keeps it.
+const isDemo = atom({ plugin: 'muslim-mods', key: 'tasbihDemo' } as const, false)
 
 export type Phrase = { id: string; arabic: string; transliteration: string; english: string; repeat: number }
 
@@ -128,13 +130,11 @@ async function invite($: EngineInterface, list: ReachedLimit[], columns: number,
 
 export const tasbih: Feature = (on, options) => {
   const showArabic = options.showArabic === true
-  // Set by /tasbih demo, whose made-up limit /tasbih close takes away again.
-  let isDemo = false
 
   on('session.measure', async ($, e, next) => {
     if (!e.changed.includes('rateLimits')) return next(e)
     const list = reachedOf(e.rateLimits)
-    isDemo = false
+    await update($, isDemo, () => false)
     await update($, reached, () => list)
     await refresh($)
 
@@ -154,8 +154,8 @@ export const tasbih: Feature = (on, options) => {
     const asked = e.args.trim().toLowerCase()
     if (asked === 'close') {
       await $.ui.close({ id: PANE })
-      if (isDemo) {
-        isDemo = false
+      if (await read($, isDemo)) {
+        await update($, isDemo, () => false)
         await update($, reached, () => [])
         await refresh($)
       }
@@ -163,7 +163,7 @@ export const tasbih: Feature = (on, options) => {
     }
     if (asked === 'demo') {
       // What a used-up 5-hour limit looks like, without waiting for one; nothing is remembered as invited.
-      isDemo = true
+      await update($, isDemo, () => true)
       const list: ReachedLimit[] = [{ kind: 'five_hour', resetsAt: new Date((await $.clock.now()) + 102 * 60e3).toISOString() }]
       await update($, reached, () => list)
       await refresh($)

@@ -19,7 +19,7 @@ const DAY_MS = 864e5
 export const addDays = (ymd: string, n: number) =>
   new Date(Date.parse(`${ymd}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10)
 
-const weekday = (ymd: string) => new Date(`${ymd}T12:00:00Z`).getUTCDay()
+export const weekday = (ymd: string) => new Date(`${ymd}T12:00:00Z`).getUTCDay()
 
 /**
  * What fasting on the Gregorian date `ymd` is, by its weekday and its Hijri date `h`
@@ -41,8 +41,11 @@ export function fastOn(ymd: string, h: HijriDate | undefined, o: Options): FastD
     if (m === 10 && d >= 2) reasons.push({ name: 'in the six days of Shawwal', remind: false })
   }
   const w = weekday(ymd)
-  if (o.mondayThursday && w === 1) reasons.unshift({ name: 'Monday', remind: true })
-  if (o.mondayThursday && w === 4) reasons.unshift({ name: 'Thursday', remind: true })
+  // Ramadan is not to be preceded by a fast of a day or two (Bukhari 1914), unless it is one you keep anyway:
+  // Monday and Thursday stay listed on the last two days of Sha'ban, without a reminder.
+  const remind = !(h && h.month === 8 && h.day >= 29)
+  if (o.mondayThursday && w === 1) reasons.unshift({ name: 'Monday', remind })
+  if (o.mondayThursday && w === 4) reasons.unshift({ name: 'Thursday', remind })
   return reasons.length ? { kind: 'sunnah', reasons } : { kind: 'none' }
 }
 

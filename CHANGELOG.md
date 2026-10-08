@@ -2,6 +2,18 @@
 
 ## muslim-mods
 
+### 1.0.1
+- Daily ayah: a new verse on `/clear`; switching a feature or changing an option keeps the current one.
+- Tasbih: `/tasbih close` ends the demo even after a reload.
+- Dashboard: a refused switch says so in a toast; the Close button no longer falls off a short pane.
+- Jumu'ah: the Friday morning toast waits for Fajr instead of coming at midnight.
+- Ramadan: between midnight and Fajr, `/ramadan` names the night in progress (an odd night of the last ten included).
+- Sunnah fasting: a session opened after midnight still hears that today is a sunnah fast while suhur is possible; `/fasting on` refuses impossible dates, says when no reminder can come (prayer times off), and notes that fasting a Friday on its own is disliked; Monday and Thursday on the last two days of Sha'ban are listed without a reminder.
+- Hijri date: the 30 days ahead are recomputed as soon as `calendar` or `adjustDays` changes; `/hijri` refuses impossible dates.
+- Prayer times: the days around a daylight-saving change are no longer counted 24 hours apart (no duplicate day, no Tahajud an hour off); where the sun doesn't rise or set (polar winter and summer) the missing times are left out instead of breaking `/prayer-times`.
+- Adhkar: a fresh start no longer resets today's reading before prayer times has published its time zone.
+- A feature switched off no longer leaves its times or dates for the others to read.
+
 ### 1.0.0
 - The mods are one plugin, `muslim-mods`: one folder to load, one entry in `/config`.
 - `/muslim` opens a dashboard that switches each feature on or off (keys 1 to 8), showing what each one shows right now; `/muslim on|off <feature>` and `/muslim list` from the prompt. A switched-off feature is not loaded.

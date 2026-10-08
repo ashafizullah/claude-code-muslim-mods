@@ -83,7 +83,8 @@ export function rowsFor(m: AdhkarMode, columns: number, showArabic: boolean) {
   return tallest + 4
 }
 
-type Watch = { delayMs: number; lastTick: number }
+/** `waitsForPrayer`: prayer times is on, so the day's date waits for its time zone. */
+type Watch = { delayMs: number; lastTick: number; waitsForPrayer: boolean }
 
 /** Where the reading got to, kept across sessions so a closed Claude Code picks up at the same dhikr. */
 type Progress = { date: string; mode: AdhkarMode; index: number; counts: Record<string, number> }
@@ -110,9 +111,10 @@ async function loadProgress($: EngineInterface) {
 async function tick($: EngineInterface, w: Watch) {
   const now = await $.clock.now()
   const { value: day } = await $.state.get(prayerDay)
-  // The day turns over at midnight where the prayer times are, so it matches their windows.
+  // The day turns over at midnight where the prayer times are, so it matches their windows. Before prayer
+  // times has published (a fresh start), this machine's date may not be that one: keep the saved progress.
   const today = localNow(now, day?.timeZone).date
-  if ((await read($, date)) !== today) {
+  if ((await read($, date)) !== today && (day || !w.waitsForPrayer)) {
     await update($, date, () => today)
     await update($, counts, () => ({}))
     await update($, index, () => 0)
@@ -174,7 +176,7 @@ async function count($: EngineInterface) {
 
 export const adhkar: Feature = (on, options) => {
   const showArabic = options.showArabic === true
-  const watch: Watch = { delayMs: Number(options.reminderDelayMinutes ?? 15) * 60e3, lastTick: 0 }
+  const watch: Watch = { delayMs: Number(options.reminderDelayMinutes ?? 15) * 60e3, lastTick: 0, waitsForPrayer: options.prayerTimes !== false }
 
   on('command.run', { command: 'adhkar' }, async ($, e) => {
     const asked = e.args.trim().toLowerCase()

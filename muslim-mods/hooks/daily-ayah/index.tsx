@@ -17,7 +17,7 @@ export function verseFor(seeded: number, skipped: number): Verse {
 
 const cite = (v: Verse) => `${v.surah} (${v.meaning}) ${v.ref}`
 
-/** A fresh verse for every session start, which includes /clear. */
+/** A fresh verse: when the session starts and on /clear, which ends it without a new session.start. */
 async function newVerse($: EngineInterface) {
   const now = await $.clock.now()
   await update($, seed, () => now % VERSES.length)
@@ -66,7 +66,14 @@ export const dailyAyah: Feature = (on, options) => {
       name: 'ayah',
       description: "Show a verse of the Qur'an",
     })
+    // A reload (switching a feature, changing an option) starts the session's hooks again; keep its verse.
+    if ((await read($, seed)) < 0) await newVerse($)
+    return next(e)
+  })
+
+  on('session.end', { reason: 'clear' }, async ($, e, next) => {
     await newVerse($)
+    await update($, isHidden, () => false)
     return next(e)
   })
 }

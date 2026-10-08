@@ -14,7 +14,7 @@ export type HijriDay = {
   month: number
   year: number
   monthName: string
-  /** The Gregorian date (YYYY-MM-DD) whose daytime this Hijri date falls on. */
+  /** Today's Gregorian date (YYYY-MM-DD). On an eve the Hijri date is already the next day's. */
   gregorian: string
   /** After Maghrib: the Hijri date has turned over, the Gregorian date has not. */
   isEve: boolean
@@ -66,6 +66,8 @@ declare module 'claude-code' {
       /** How many times each phrase was said, by its id. */
       tasbihCounts: Record<string, number>
       tasbihLine: HintLine
+      /** Whether the limit shown is /tasbih demo's, made up. */
+      tasbihDemo: boolean
     }
   }
 }

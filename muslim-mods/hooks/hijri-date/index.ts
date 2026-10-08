@@ -54,7 +54,10 @@ async function tick($: EngineInterface, s: Settings) {
     await update($, today, () => h)
   }
 
-  if ((await read($, ahead))[0]?.gregorian !== h.gregorian) {
+  // Rebuilt at midnight, and when calendar or adjustDays changed (state outlives the reload that follows).
+  const first = (await read($, ahead))[0]
+  const expected = hijriOf(h.gregorian, s.calendar, s.adjustDays)
+  if (first?.gregorian !== h.gregorian || first.day !== expected.day || first.month !== expected.month || first.year !== expected.year) {
     const days: HijriDate[] = Array.from({ length: AHEAD_DAYS }, (_, i) => {
       const gregorian = addDays(h.gregorian, i)
       return { gregorian, ...hijriOf(gregorian, s.calendar, s.adjustDays) }
@@ -89,7 +92,7 @@ export const hijriDate: Feature = (on, options) => {
   on('command.run', { command: 'hijri' }, async ($, e) => {
     const arg = e.args.trim()
     if (arg !== '') {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(arg) || Number.isNaN(Date.parse(`${arg}T00:00:00Z`))) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(arg) || Number.isNaN(Date.parse(`${arg}T00:00:00Z`)) || addDays(arg, 0) !== arg) {
         return { text: 'Give a Gregorian date as YYYY-MM-DD, e.g. /hijri 2027-03-10.' }
       }
       const h = hijriOf(arg, settings.calendar, settings.adjustDays)

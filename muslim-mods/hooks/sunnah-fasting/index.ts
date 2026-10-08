@@ -3,7 +3,7 @@ import type { EngineInterface } from 'claude-code'
 
 import type { HijriDate, PrayerTimesDay } from '../../types'
 
-import { addDays, clock, dateLabel, describe, fastOn, isReminded, localDate, localHour } from './fasts'
+import { addDays, clock, dateLabel, describe, fastOn, isReminded, localDate, localHour, weekday } from './fasts'
 import type { FastDay, Options } from './fasts'
 import type { Feature } from '../feature'
 
@@ -38,7 +38,7 @@ async function context($: EngineInterface, now: number) {
   const maghrib = slot('Maghrib')
   const isEvening = maghrib !== undefined ? now >= maghrib : localHour(now, timeZone) >= EVENING_HOUR
   const fastFor = (ymd: string, s: Settings) => fastOn(ymd, ahead?.find(h => h.gregorian === ymd), s)
-  return { timeZone, today, fajr, maghrib, isEvening, fastFor }
+  return { timeZone, today, fajr, maghrib, isEvening, hasTimes: !!day, fastFor }
 }
 
 const intents = async ($: EngineInterface) => ((await $.store.get(INTENT_KEY)) as string[] | undefined) ?? []
@@ -49,13 +49,15 @@ async function setIntent($: EngineInterface, ymd: string, on: boolean, today: st
   await $.store.set(INTENT_KEY, on ? [...kept, ymd].sort() : kept)
 }
 
-function eveText(tomorrow: string, f: FastDay, isIntended: boolean, suhurAt: string | undefined) {
+function eveText(day: string, f: FastDay, isIntended: boolean, suhurAt: string | undefined, isToday: boolean) {
   const why = f.kind === 'sunnah' ? describe(f.reasons) : ''
+  const when = isToday ? 'today' : 'tomorrow'
   if (isIntended) {
     const suhur = suhurAt ? ` Suhur reminder around ${suhurAt}.` : ''
-    return `🌙 You're fasting tomorrow, ${dateLabel(tomorrow)}${why ? ` (${why})` : ''}.${suhur}`
+    return `🌙 You're fasting ${when}, ${dateLabel(day)}${why ? ` (${why})` : ''}.${suhur}`
   }
-  return `🌙 Tomorrow is ${why}: fasting is sunnah. /fasting on to fast it, with suhur and iftar reminders.`
+  const until = isToday && suhurAt ? ' There is still time for suhur.' : ''
+  return `🌙 ${isToday ? 'Today' : 'Tomorrow'} is ${why}: fasting is sunnah.${until} /fasting on to fast it, with suhur and iftar reminders.`
 }
 
 async function tick($: EngineInterface, w: Watch) {
@@ -66,16 +68,19 @@ async function tick($: EngineInterface, w: Watch) {
   const intended = await intents($)
   const isFasting = intended.includes(c.today)
 
-  if (c.isEvening) {
-    const tomorrow = addDays(c.today, 1)
-    const f = c.fastFor(tomorrow, s)
-    const isIntended = intended.includes(tomorrow)
-    const key = `eve:${tomorrow}`
+  // From Maghrib, tomorrow's fast; after midnight until Fajr (a session opened then), today's, while suhur is still possible.
+  const isBeforeFajr = c.fajr !== undefined && now < c.fajr
+  const upcoming = c.isEvening ? addDays(c.today, 1) : isBeforeFajr ? c.today : undefined
+  if (upcoming) {
+    const f = c.fastFor(upcoming, s)
+    const isIntended = intended.includes(upcoming)
+    const key = `eve:${upcoming}`
     const announced = ((await $.store.get(ANNOUNCED_KEY)) as string[] | undefined) ?? []
     if ((isReminded(f) || isIntended) && f.kind !== 'forbidden' && !announced.includes(key)) {
       // Tomorrow's Fajr is close enough to today's for a reminder's "around".
-      const suhurAt = c.fajr !== undefined && s.suhurMs > 0 ? clock(c.fajr + 864e5 - s.suhurMs, c.timeZone) : undefined
-      $.ui.toast(eveText(tomorrow, f, isIntended, suhurAt), { timeoutMs: 20e3 })
+      const fajr = isBeforeFajr ? c.fajr : c.fajr !== undefined ? c.fajr + 864e5 : undefined
+      const suhurAt = fajr !== undefined && s.suhurMs > 0 ? clock(fajr - s.suhurMs, c.timeZone) : undefined
+      $.ui.toast(eveText(upcoming, f, isIntended, suhurAt, isBeforeFajr), { timeoutMs: 20e3 })
       await $.store.set(ANNOUNCED_KEY, [...announced.slice(-20), key])
     }
   }
@@ -118,7 +123,7 @@ export const sunnahFasting: Feature = (on, options) => {
         : /^\d{4}-\d{2}-\d{2}$/.test(arg) ? arg
         : arg === '' ? (c.isEvening ? addDays(c.today, 1) : c.today)
         : undefined
-      if (!target || Number.isNaN(Date.parse(`${target}T00:00:00Z`))) {
+      if (!target || Number.isNaN(Date.parse(`${target}T00:00:00Z`)) || addDays(target, 0) !== target) {
         return { text: 'Usage: /fasting on|off [today|tomorrow|YYYY-MM-DD]' }
       }
       if (target < c.today) return { text: `${dateLabel(target)} has passed.` }
@@ -135,12 +140,27 @@ export const sunnahFasting: Feature = (on, options) => {
       await setIntent($, target, true, c.today)
       await tick($, watch)
       const why = f.kind === 'sunnah' ? ` (${describe(f.reasons)})` : ''
+      // Singling out Friday is disliked (Bukhari 1985), unless with the day before or after, or for a reason of its own.
+      const all = await intents($)
+      const isFridayAlone =
+        weekday(target) === 5 &&
+        f.kind === 'none' &&
+        !all.includes(addDays(target, -1)) &&
+        !all.includes(addDays(target, 1))
+      const friday = isFridayAlone
+        ? ' Fasting a Friday on its own is disliked (Bukhari 1985): fast Thursday or Saturday with it.'
+        : ''
+      if (!c.hasTimes) {
+        return {
+          text: `Fasting ${dateLabel(target)}${why}. Prayer times are off or have no place yet, so no suhur or iftar reminder will come.${friday}`,
+        }
+      }
       const isToday = target === c.today
       const suhur = s.suhurMs > 0 && !(isToday && c.fajr !== undefined && now >= c.fajr)
         ? `a suhur reminder ${Math.round(s.suhurMs / 60e3)} minutes before Fajr and `
         : ''
       const iftar = isToday && c.maghrib !== undefined ? `iftar at ${clock(c.maghrib, c.timeZone)}` : 'one at Maghrib for iftar'
-      return { text: `Fasting ${dateLabel(target)}${why}. You'll get ${suhur}${iftar}.` }
+      return { text: `Fasting ${dateLabel(target)}${why}. You'll get ${suhur}${iftar}.${friday}` }
     }
     if (verb !== '') return { text: 'Usage: /fasting, or /fasting on|off [today|tomorrow|YYYY-MM-DD]' }
 

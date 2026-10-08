@@ -7,8 +7,9 @@ import type { Feature } from '../feature'
 const TICK_MS = 10e3
 // A crossing older than this (the laptop slept through it) is not announced.
 const STALE_MS = 5 * 60e3
-// Without prayer-times, Thursday's evening (the night of Jumu'ah) begins at this hour.
+// Without prayer times, Thursday's evening (the night of Jumu'ah) begins at this hour, and Friday's morning at this one.
 const EVENING_HOUR = 18
+const MORNING_HOUR = 5
 // The Fridays whose Al-Kahf was read, and the toasts given, as `<kind>:<Friday's date>`; kept across sessions.
 const DONE_KEY = 'jumuah.done'
 
@@ -85,7 +86,11 @@ async function context($: EngineInterface, now: number) {
     : w === FRIDAY && !isEvening ? today
     : undefined
   const isFridayDay = w === FRIDAY && !isEvening
-  return { timeZone, today, fajr, dhuhr, asr, maghrib, friday, isFridayDay }
+  // Yesterday's times, for the moment after midnight (or a wake) before prayer times publishes today's.
+  const isStale = !!day && day.date !== today
+  // Without prayer times at all, the morning begins at this hour.
+  const isMorning = fajr !== undefined ? now >= fajr : !day && Number(parts(now, timeZone)('hour')) >= MORNING_HOUR
+  return { timeZone, today, fajr, dhuhr, asr, maghrib, friday, isFridayDay, isStale, isMorning }
 }
 
 const doneList = async ($: EngineInterface) => ((await $.store.get(DONE_KEY)) as string[] | undefined) ?? []
@@ -102,9 +107,9 @@ async function tick($: EngineInterface, w: Watch) {
   const crossed = (at: number | undefined) => at !== undefined && w.lastTick < at && at <= now && now - at < STALE_MS
   const done = await doneList($)
 
-  if (c.friday) {
+  if (c.friday && !c.isStale) {
     // Once per Friday, even across sessions: the night's toast, then the morning's from Fajr.
-    const kind = c.isFridayDay && (c.fajr === undefined || now >= c.fajr) ? 'morning' : c.isFridayDay ? undefined : 'night'
+    const kind = c.isFridayDay ? (c.isMorning ? 'morning' : undefined) : 'night'
     if (kind && !done.includes(`${kind}:${c.friday}`)) {
       $.ui.toast(kind === 'night' ? NIGHT : MORNING, { timeoutMs: 20e3 })
       await markDone($, `${kind}:${c.friday}`)

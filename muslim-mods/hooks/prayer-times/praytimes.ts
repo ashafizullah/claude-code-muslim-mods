@@ -172,6 +172,14 @@ function times(day: number, s: Settings): { name: Name | 'Dhuha'; at: number }[]
     const minutes = Math.round((hours[name] + shift) * 60 + margin)
     return { name, at: midnightUtc + minutes * 60e3 }
   })
+  // Where the sun never rises or never sets (polar day and night), those times don't exist.
+  .filter(t => Number.isFinite(t.at))
+}
+
+/** Local noon of the calendar day `days` away from the one holding `at`, so a 23- or 25-hour DST day is stepped over whole. */
+export function dayAway(at: number, days: number, timeZone: string) {
+  const noon = Date.parse(`${localDate(at, timeZone)}T12:00:00Z`) + days * 86400e3
+  return noon - offsetHours(noon, timeZone) * 3600e3
 }
 
 /** Times for the calendar day holding instant `day` in the settings' time zone, as epoch ms. */
@@ -185,15 +193,16 @@ export function prayerTimes(day: number, s: Settings): Slot[] {
  */
 export function schedule(day: number, s: Settings): Entry[] {
   const all = times(day, s)
-  const fajr = all.find(t => t.name === 'Fajr')!.at
-  const maghrib = times(day - 86400e3, s).find(t => t.name === 'Maghrib')!.at
+  const fajr = all.find(t => t.name === 'Fajr')?.at
+  const maghrib = times(dayAway(day, -1, s.timeZone), s).find(t => t.name === 'Maghrib')?.at
+  if (fajr === undefined || maghrib === undefined) return all
   const tahajud = Math.round((fajr - (fajr - maghrib) / 3) / 60e3) * 60e3
   return [{ name: 'Tahajud', at: tahajud }, ...all]
 }
 
 /** Today's schedule followed by tomorrow's, so the next prayer always exists. */
 export function upcoming(now: number, s: Settings): Entry[] {
-  return [...schedule(now, s), ...schedule(now + 86400e3, s)]
+  return [...schedule(now, s), ...schedule(dayAway(now, 1, s.timeZone), s)]
 }
 
 export function clock(at: number, timeZone: string) {

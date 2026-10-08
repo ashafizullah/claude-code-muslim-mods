@@ -83,12 +83,16 @@ async function context($: EngineInterface, now: number) {
   const today = localDate(now, timeZone)
   const slot = (name: string) => (day?.date === today ? day.slots.find(s => s.name === name)?.at : undefined)
   const hijri = (ymd: string) => ahead?.find(h => h.gregorian === ymd)
+  const fajr = slot('Fajr')
   const todayH = hijri(today)
-  const tonightH = hijri(addDays(today, 1))
+  const tomorrowH = hijri(addDays(today, 1))
+  // Between midnight and Fajr the night in progress is the one before today's fast, not tomorrow's.
+  const isNightBeforeFajr = fajr !== undefined && now < fajr
+  const tonightH = isNightBeforeFajr ? todayH : tomorrowH
   return {
     timeZone,
     today,
-    fajr: slot('Fajr'),
+    fajr,
     maghrib: slot('Maghrib'),
     isha: slot('Isha'),
     ahead: ahead ?? [],
@@ -96,7 +100,7 @@ async function context($: EngineInterface, now: number) {
     fastDay: todayH?.month === 9 ? todayH.day : undefined,
     /** Tonight is a night of Ramadan: its number, else undefined. */
     night: tonightH?.month === 9 ? tonightH.day : undefined,
-    isEidEve: tonightH?.month === 10 && tonightH.day === 1,
+    isEidEve: !isNightBeforeFajr && tomorrowH?.month === 10 && tomorrowH.day === 1,
   }
 }
 

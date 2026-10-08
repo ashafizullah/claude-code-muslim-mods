@@ -1,4 +1,4 @@
-import { atom, read } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
 import { adhkar } from './adhkar'
@@ -21,6 +21,10 @@ const fastingLine = atom({ plugin: 'muslim-mods', key: 'fastingLine' } as const,
 const ramadanLine = atom({ plugin: 'muslim-mods', key: 'ramadanLine' } as const, null)
 const jumuahLine = atom({ plugin: 'muslim-mods', key: 'jumuahLine' } as const, null)
 const tasbihLine = atom({ plugin: 'muslim-mods', key: 'tasbihLine' } as const, null)
+// What prayer times and the Hijri date publish for the others; state outlives the reload a switch makes.
+const prayerToday = atom({ plugin: 'muslim-mods', key: 'prayerToday' } as const, null)
+const hijriToday = atom({ plugin: 'muslim-mods', key: 'hijriToday' } as const, null)
+const hijriAhead = atom({ plugin: 'muslim-mods', key: 'hijriAhead' } as const, [])
 
 export type Entry = {
   /** Its on/off option in the manifest, `muslim-mods.<id>`. */
@@ -91,7 +95,33 @@ async function toggle($: EngineInterface, f: Entry, value: boolean) {
   return set.deny ? `Could not switch ${f.title} ${value ? 'on' : 'off'}: ${set.deny}` : `${f.title} is ${value ? 'on' : 'off'}.`
 }
 
+/** The same from the dashboard, where only a refusal needs saying. */
+async function toggleFromPane($: EngineInterface, f: Entry, value: boolean) {
+  const text = await toggle($, f, value)
+  if (text.startsWith('Could not')) $.ui.toast(text, { timeoutMs: 10e3 })
+}
+
 export const register: Register = (on, options) => {
+  // First, so what a switched-off feature left is cleared before the others start reading it.
+  on('session.start', async ($, e, next) => {
+    await $.command.register({
+      name: 'muslim',
+      description: 'The Muslim mods dashboard: switch each one on or off. /muslim on|off <feature>',
+    })
+    // A feature switched off leaves what it published; the others shouldn't keep reading it.
+    // Never at the cost of the features' own start, beneath this hook.
+    try {
+      if (!isOn(options, 'prayerTimes') && (await read($, prayerToday))) await update($, prayerToday, () => null)
+      if (!isOn(options, 'hijriDate') && (await read($, hijriAhead)).length) {
+        await update($, hijriToday, () => null)
+        await update($, hijriAhead, () => [])
+      }
+    } catch {
+      // Left as it was: the features fall back as they would without it.
+    }
+    return next(e)
+  })
+
   // Only the features that are on are hooked; switching one reloads the plugin.
   if (isOn(options, 'prayerTimes')) prayer(on, options)
   if (isOn(options, 'hijriDate')) hijriDate(on, options)
@@ -101,14 +131,6 @@ export const register: Register = (on, options) => {
   if (isOn(options, 'jumuah')) jumuah(on, options)
   if (isOn(options, 'dailyAyah')) dailyAyah(on, options)
   if (isOn(options, 'tasbih')) tasbih(on, options)
-
-  on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: 'muslim',
-      description: 'The Muslim mods dashboard: switch each one on or off. /muslim on|off <feature>',
-    })
-    return next(e)
-  })
 
   // One line under the prompt, each feature's part in a fixed order, no labels.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
@@ -134,7 +156,8 @@ export const register: Register = (on, options) => {
       title: 'Muslim mods',
       focus: true,
       closeOnEscape: true,
-      rows: FEATURES.length * 2 + 2,
+      // Two lines a feature, a note cut to one, and the footer.
+      rows: FEATURES.length * 2 + 3,
       columns: PANE_COLUMNS,
     })
     return { text: 'Muslim mods opened. Keys 1–8 switch each one on or off; x closes.' }
@@ -157,13 +180,15 @@ export const register: Register = (on, options) => {
                 hotkey={String(i + 1)}
                 variant={isOnNow ? 'primary' : undefined}
                 label={isOnNow ? '● On ' : '○ Off'}
-                onPress={() => toggle($, f, !isOnNow)}
+                onPress={() => toggleFromPane($, f, !isOnNow)}
               />
               <Box flexDirection="column">
                 <Text bold={isOnNow} dimColor={!isOnNow}>
                   {i + 1} {f.title}
                 </Text>
-                <Text dimColor>{note}</Text>
+                <Text dimColor wrap="truncate-end">
+                  {note}
+                </Text>
               </Box>
             </Box>
           )
