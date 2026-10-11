@@ -28,6 +28,9 @@ export type AdhkarMode = 'morning' | 'evening'
 /** A rate-limit window that ran out. */
 export type ReachedLimit = { kind: 'five_hour' | 'seven_day'; resetsAt?: string }
 
+/** A salah break: from the prayer's time (or a later start) until it ends, as epoch milliseconds. */
+export type SalahBreak = { prayer: string; from: number; until: number; timeZone?: string }
+
 /** A line on the hint line under the prompt, or nothing. */
 export type HintLine = string | null
 
@@ -68,6 +71,12 @@ declare module 'claude-code' {
       tasbihLine: HintLine
       /** Whether the limit shown is /tasbih demo's, made up. */
       tasbihDemo: boolean
+
+      /** The salah break under way or about to begin, or none. */
+      salahBreak: SalahBreak | null
+      /** A prompt typed during the break, offered back when it ends. */
+      salahHeld: string | null
+      salahLine: HintLine
     }
   }
 }

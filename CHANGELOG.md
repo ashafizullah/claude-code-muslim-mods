@@ -2,6 +2,10 @@
 
 ## muslim-mods
 
+### 1.1.0
+- New: Salah break. At each prayer's time, a 15-minute break from work: a toast, a countdown first on the hint line, and the prompts you type held until it ends, then offered back in the prompt box. `/salah done`, `/salah later` (5 more minutes), `/salah now`; `/muslim break <minutes>` and `/muslim hold on|off`, or **s**, **l** and **h** on the dashboard. Options `salahBreak`, `salahBreakMinutes`, `salahBreakHold`.
+- Dashboard: keys 1 to 9.
+
 ### 1.0.1
 - Daily ayah: a new verse on `/clear`; switching a feature or changing an option keeps the current one.
 - Tasbih: `/tasbih close` ends the demo even after a reload.

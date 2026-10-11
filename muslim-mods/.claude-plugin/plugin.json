@@ -1,7 +1,7 @@
 {
   "name": "muslim-mods",
-  "version": "1.0.1",
-  "description": "Prayer times, the Hijri date, adhkar, a daily ayah, sunnah fasting, Ramadan, Jumu'ah and tasbih in Claude Code, each switched on or off from one dashboard: /muslim.",
+  "version": "1.1.0",
+  "description": "Prayer times, the Hijri date, adhkar, a daily ayah, sunnah fasting, Ramadan, Jumu'ah, tasbih and a salah break in Claude Code, each switched on or off from one dashboard: /muslim.",
   "author": {
     "name": "Adam Suchi Hafizullah"
   },
@@ -53,6 +53,24 @@
       "type": "boolean",
       "title": "Tasbih",
       "description": "When the 5-hour or weekly limit runs out, an invitation to dhikr with a counter.",
+      "default": true
+    },
+    "salahBreak": {
+      "type": "boolean",
+      "title": "Salah break",
+      "description": "At each prayer's time, a break from work: your prompts wait until it ends or you say /salah done.",
+      "default": true
+    },
+    "salahBreakMinutes": {
+      "type": "number",
+      "title": "Salah break (minutes)",
+      "description": "How long the salah break lasts.",
+      "default": 15
+    },
+    "salahBreakHold": {
+      "type": "boolean",
+      "title": "Hold prompts during the salah break",
+      "description": "Keep the prompts you type during the break and offer them back after it; off, the break is only a reminder.",
       "default": true
     },
     "city": {

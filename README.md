@@ -4,11 +4,11 @@
 [![License: MIT](https://img.shields.io/github/license/ashafizullah/claude-code-muslim-mods?color=blue)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-%E2%89%A5%202.1.288-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Features](https://img.shields.io/badge/features-8-2E7D32)](#muslim-mods-for-claude-code)
+[![Features](https://img.shields.io/badge/features-9-2E7D32)](#muslim-mods-for-claude-code)
 [![Last commit](https://img.shields.io/github/last-commit/ashafizullah/claude-code-muslim-mods)](https://github.com/ashafizullah/claude-code-muslim-mods/commits/main)
 [![Stars](https://img.shields.io/github/stars/ashafizullah/claude-code-muslim-mods?style=social)](https://github.com/ashafizullah/claude-code-muslim-mods/stargazers)
 
-One plugin that brings prayer times, the Hijri date, the morning and evening adhkar, a verse of the Qur'an, sunnah fasting, Ramadan, Jumu'ah and a tasbih for when your usage limit runs out into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr. Each feature is switched on or off from one dashboard, `/muslim`.
+One plugin that brings prayer times, the Hijri date, the morning and evening adhkar, a verse of the Qur'an, sunnah fasting, Ramadan, Jumu'ah, a tasbih for when your usage limit runs out and a salah break at each prayer's time into [Claude Code](https://claude.com/claude-code), so a long coding session doesn't run straight past Asr. Each feature is switched on or off from one dashboard, `/muslim`.
 
 | Feature | What it does | Command |
 | --- | --- | --- |
@@ -20,6 +20,7 @@ One plugin that brings prayer times, the Hijri date, the morning and evening adh
 | [Jumu'ah](#jumuah) | From Thursday's Maghrib, salawat and Al-Kahf; on Friday, a reminder to get ready for the prayer and the last hour after Asr. | `/jumuah` |
 | [Daily ayah](#daily-ayah) | Shows a verse of the Qur'an in a band above the prompt, a new one each session. | `/ayah` |
 | [Tasbih](#tasbih) | When your 5-hour or weekly limit runs out, invites you to SubhanAllah, Alhamdulillah and Allahu akbar, with a counter. | `/tasbih` |
+| [Salah break](#salah-break) | At each prayer's time, a break from work: the prompts you type wait until it ends, then come back to the prompt box. | `/salah` |
 
 **Getting started:** see [Install](#install). It is a Claude Code plugin built on function hooks and needs Claude Code **2.1.288 or newer**; the plugin API is in early access and may change between releases.
 
@@ -39,11 +40,12 @@ One plugin that brings prayer times, the Hijri date, the morning and evening adh
 └────────────────────────────────────────────────────────────────┘
 ```
 
-- **`/muslim`** opens the dashboard: each feature with what it shows right now. Keys **1** to **8** switch one on or off; **x** closes.
-- **`/muslim off ayah`**, **`/muslim on fasting`** do the same from the prompt (`prayer`, `hijri`, `adhkar`, `fasting`, `ramadan`, `jumuah`, `ayah`, `tasbih`); **`/muslim list`** shows which are on.
+- **`/muslim`** opens the dashboard: each feature with what it shows right now. Keys **1** to **9** switch one on or off; **s** and **l** shorten or lengthen the salah break, **h** sets whether it holds prompts; **x** closes.
+- **`/muslim off ayah`**, **`/muslim on fasting`** do the same from the prompt (`prayer`, `hijri`, `adhkar`, `fasting`, `ramadan`, `jumuah`, `ayah`, `tasbih`, `salah`); **`/muslim list`** shows which are on.
+- **`/muslim break 20`** sets the salah break's length (1 to 120 minutes); **`/muslim hold on|off`** whether it holds prompts.
 - A switched-off feature is not loaded at all: no hooks, no timers, no network. Switching saves the setting and reloads the plugin.
 - Every feature's part of the hint line under the prompt is joined into one line in a fixed order, with no labels.
-- Hijri date, adhkar, sunnah fasting, Ramadan and Jumu'ah read today's times from Prayer times, and sunnah fasting and Ramadan their dates from Hijri date. Switched off, what depends on them works only in part (the dashboard says so): adhkar falls back to fixed hours, and Ramadan needs both.
+- Hijri date, adhkar, sunnah fasting, Ramadan and Jumu'ah read today's times from Prayer times, and sunnah fasting and Ramadan their dates from Hijri date; the salah break starts at Prayer times' times. Switched off, what depends on them works only in part (the dashboard says so): adhkar falls back to fixed hours, and Ramadan needs both.
 
 All features are on to start with. Every option below is in `/config` under **muslim-mods**.
 
@@ -292,6 +294,26 @@ The limits are read from what Claude Code reports, so this works on a Claude sub
 | Option | Default | |
 | --- | --- | --- |
 | `showArabic` | `false` | Also show the Arabic in the pane (one option for adhkar, the daily ayah and the tasbih). |
+
+## Salah break
+
+```
+🧎 Dhuhr: a salah break until 11:55. Prompts wait until then; /salah done when you're back.   ← toast, at the prayer's time
+? for shortcuts  🧎 Salah break · Dhuhr · 12:40 left · /salah done · 🕌 Asr 14:50 · …            ← hint line, first while it lasts
+🤲 The salah break is over. Taqabbal Allahu minna wa minkum.                                    ← toast, when it ends
+```
+
+- At Fajr, Dhuhr, Asr, Maghrib and Isha a break begins and lasts 15 minutes (`salahBreakMinutes`). A prayer time the laptop slept through starts no break.
+- While it lasts, a prompt you type is not sent: it is kept, and when the break ends every prompt kept is offered back in the prompt box (dim, Tab takes it), as soon as the box is empty and Claude is idle. Only the words are kept; add attachments again. Slash commands, and prompts that come from anywhere but your keyboard, go through.
+- **`/salah done`** ends the break when you're back, **`/salah later`** puts it off 5 minutes, **`/salah now`** starts one, and **`/salah`** says where it stands.
+- With `salahBreakHold` off the break is only a reminder: the toast and the countdown, nothing held.
+- It needs Prayer times on for the times.
+
+| Option | Default | |
+| --- | --- | --- |
+| `salahBreak` | `true` | The salah break itself; also `/muslim off salah`. |
+| `salahBreakMinutes` | `15` | How long it lasts, 1 to 120 minutes; also `/muslim break <minutes>` or **s** and **l** on the dashboard. |
+| `salahBreakHold` | `true` | Hold the prompts typed during it; also `/muslim hold on|off` or **h** on the dashboard. |
 
 ## Install
 

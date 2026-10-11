@@ -85,3 +85,21 @@ test('the hint line joins the parts of the features that are on, in order', { op
   } as never)
   expect(w.tails.at(-1)).toBe("📅 25 Rabi' al-Akhir 1448 · 📖 Al-Kahf · /jumuah read")
 })
+
+// A length set outside 5–60 by /muslim break or /config: Shorter never lengthens it, Longer never shortens it.
+for (const [minutes, key, value] of [
+  [3, 'break-less', 3],
+  [3, 'break-more', 8],
+  [90, 'break-more', 90],
+  [90, 'break-less', 85],
+  [15, 'break-less', 10],
+] as const) {
+  test(`salah break ${minutes} min: ${key} sets ${value}`, { options: { ...only('salahBreak'), salahBreakMinutes: minutes } }, async ($, on) => {
+    const w = world(on)
+    await $.session.start(start)
+    await $.command.run(run(''))
+    const ui = await $.ui.mount(PANE as never)
+    await ui.press({ key })
+    expect(w.configured.at(-1)).toEqual(expect.objectContaining({ key: 'muslim-mods.salahBreakMinutes', value }))
+  })
+}
