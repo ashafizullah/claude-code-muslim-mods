@@ -22,7 +22,7 @@ const prayerDay = { plugin: 'muslim-mods', key: 'prayerToday' } as const
 // carries the latest one between them, so `/salah done` (or later, or now) in one reaches them all.
 export const SHARED_KEY = 'salah.break'
 
-type Watch = { breakMs: number; isHolding: boolean; lastTick: number }
+type Watch = { breakMs: number; isHolding: boolean; lastTick: number; busy: Promise<void> | null }
 
 /** The break's length in minutes and whether it holds prompts, from the options. */
 export const breakSettings = (options: PluginOptions) => ({
@@ -115,13 +115,14 @@ async function tick($: EngineInterface, w: Watch) {
   }
 
   let b = await read($, current)
-  // What another terminal did: ended this break, put it off, or began one this terminal hasn't.
+  // What another terminal did: ended this break, put it off, or began a newer one.
+  // The shared break wins over this terminal's own unless it is older.
   const r = await shared($)
-  if (r && (b ? idOf(r) === idOf(b) : !r.endedAt && now < r.until)) {
+  if (r && (b ? idOf(r) >= idOf(b) : !r.endedAt && now < r.until)) {
     if (r.endedAt) {
       await end($)
       b = null
-    } else if (!b || b.from !== r.from || b.until !== r.until) {
+    } else if (!b || idOf(b) !== idOf(r) || b.from !== r.from || b.until !== r.until) {
       const taken = local(r)
       await update($, current, () => taken)
       b = taken
@@ -143,9 +144,25 @@ async function tick($: EngineInterface, w: Watch) {
   w.lastTick = now
 }
 
+/**
+ * One tick at a time: the timer's tick is skipped while one runs, and a command's waits for it.
+ * Two at once would both see the same prayer cross and begin, and say, the break twice.
+ */
+async function step($: EngineInterface, w: Watch) {
+  while (w.busy) await w.busy
+  w.busy = tick($, w)
+    .catch(() => {
+      // The next tick tries again.
+    })
+    .finally(() => {
+      w.busy = null
+    })
+  await w.busy
+}
+
 export const salahBreak: Feature = (on, options) => {
   const s = breakSettings(options)
-  const watch: Watch = { breakMs: s.minutes * 60e3, isHolding: s.isHolding, lastTick: 0 }
+  const watch: Watch = { breakMs: s.minutes * 60e3, isHolding: s.isHolding, lastTick: 0, busy: null }
 
   // During the break the person's own prompts wait; slash commands, and everything else, go through.
   on('prompt.submit', async ($, e, next) => {
@@ -178,7 +195,7 @@ export const salahBreak: Feature = (on, options) => {
       // First the store, so no other terminal's tick takes the break back up.
       await share($, { ...b, id: idOf(b), endedAt: now })
       await end($)
-      await tick($, watch)
+      await step($, watch)
       return { text: arg === 'done' ? 'Welcome back. Taqabbal Allahu minna wa minkum.' : 'Salah break skipped.' }
     }
     if (arg === 'later') {
@@ -187,14 +204,14 @@ export const salahBreak: Feature = (on, options) => {
       const nb = { ...b, id: idOf(b), from, until: from + watch.breakMs }
       await update($, current, () => nb)
       await share($, nb)
-      await tick($, watch)
+      await step($, watch)
       return { text: `The salah break for ${b.prayer} starts in 5 minutes, at ${at(from, b.timeZone)}.` }
     }
     if (arg === 'now') {
       const day = await today($)
       const last = [...(day?.slots ?? [])].reverse().find(slot => isPrayer(slot.name) && slot.at <= now)
       const nb = await begin($, watch, last?.name ?? 'Salah', now, day?.timeZone)
-      await tick($, watch)
+      await step($, watch)
       return { text: `Salah break until ${at(nb.until, nb.timeZone)}. /salah done when you're back.` }
     }
     if (arg !== '') return { text: 'Usage: /salah, /salah now, /salah later, or /salah done' }
@@ -217,8 +234,10 @@ export const salahBreak: Feature = (on, options) => {
       description: "A break from work at each prayer's time; /salah now, /salah later, /salah done",
     })
     watch.lastTick = await $.clock.now()
-    await tick($, watch)
-    $.clock.every(TICK_MS, () => void tick($, watch))
+    await step($, watch)
+    $.clock.every(TICK_MS, () => {
+      if (!watch.busy) void step($, watch)
+    })
     return next(e)
   })
 }

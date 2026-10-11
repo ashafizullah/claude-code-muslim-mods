@@ -228,3 +228,25 @@ test('a prayer another terminal already ended starts no break here', { options: 
   expect(w.toasts).toEqual([])
   expect((await $.prompt.submit(typed('go'))).text).toBe('go')
 })
+
+test('a newer break from another terminal replaces this one, and its done ends it', { options: ONLY }, async ($, on) => {
+  const clock = mock.clock(on, { now: Date.parse('2026-10-12T11:39:30+07:00') })
+  const w = world(on)
+  await $.session.start(start)
+  await $.ui.mount(HINT as never)
+  await clock.advance(60e3)
+  expect(w.tails.at(-1)).toContain('Dhuhr')
+
+  // Another terminal says /salah now ten minutes into Dhuhr's break.
+  const now = clock.now() + 10 * 60e3
+  await clock.set(now)
+  const newer = { id: now, prayer: 'Dhuhr', from: now, until: now + 15 * 60e3, timeZone: 'Asia/Jakarta' }
+  w.store.set(SHARED_KEY, newer)
+  await clock.advance(1e3)
+  expect((await $.prompt.submit(typed('wait'))).drop).toContain('until 12:05')
+
+  w.store.set(SHARED_KEY, { ...newer, endedAt: clock.now() })
+  await clock.advance(1e3)
+  expect(w.tails.at(-1)).toBeUndefined()
+  expect(w.toasts.length).toBe(1)
+})

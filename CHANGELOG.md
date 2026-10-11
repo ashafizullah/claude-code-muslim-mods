@@ -2,6 +2,9 @@
 
 ## muslim-mods
 
+### 1.1.2
+- Salah break: a slow tick, or a `/salah` command during one, no longer begins the break or shows its toast twice; a `/salah now` in another terminal during a break replaces the break here too, so its `/salah done` ends it everywhere.
+
 ### 1.1.1
 - Salah break: one break across every terminal. `/salah done`, `later` and `now` in one reach the others within a second (each terminal ending it used to need its own `/salah done`), and a terminal opened during the break holds prompts too.
 
