@@ -60,7 +60,8 @@ const run = (args: string) => ({
   presentation: { isFullscreen: false, columns: 120 },
 }) as const
 
-test('detects the place from the IP, reminds before Asr and announces it', { options: ONLY }, async ($, on) => {
+// Many minutes of 1-second ticks: slow on a CI runner.
+test('detects the place from the IP, reminds before Asr and announces it', { options: ONLY, timeoutMs: 30e3 }, async ($, on) => {
   const clock = mock.clock(on, { now: START })
   const w = world(on, { 'https://ipwho.is/': IPWHO })
 
