@@ -28,8 +28,14 @@ export type AdhkarMode = 'morning' | 'evening'
 /** A rate-limit window that ran out. */
 export type ReachedLimit = { kind: 'five_hour' | 'seven_day'; resetsAt?: string }
 
-/** A salah break: from the prayer's time (or a later start) until it ends, as epoch milliseconds. */
-export type SalahBreak = { prayer: string; from: number; until: number; timeZone?: string }
+/**
+ * A salah break: from the prayer's time (or a later start) until it ends, as epoch milliseconds.
+ * `id` is when it first began (the prayer's time, or `/salah now`), the same in every terminal.
+ */
+export type SalahBreak = { id?: number; prayer: string; from: number; until: number; timeZone?: string }
+
+/** The salah break as every terminal shares it in the store, with when one of them ended it. */
+export type SharedSalahBreak = SalahBreak & { endedAt?: number }
 
 /** A line on the hint line under the prompt, or nothing. */
 export type HintLine = string | null

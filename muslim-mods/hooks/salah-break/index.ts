@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, PluginOptions } from 'claude-code'
 
-import type { PrayerTimesDay, SalahBreak } from '../../types'
+import type { PrayerTimesDay, SalahBreak, SharedSalahBreak } from '../../types'
 import { clock, countdown } from '../prayer-times/praytimes'
 import type { Feature } from '../feature'
 
@@ -18,6 +18,9 @@ const current = atom({ plugin: 'muslim-mods', key: 'salahBreak' } as const, null
 const held = atom({ plugin: 'muslim-mods', key: 'salahHeld' } as const, null)
 const line = atom({ plugin: 'muslim-mods', key: 'salahLine' } as const, null)
 const prayerDay = { plugin: 'muslim-mods', key: 'prayerToday' } as const
+// Each terminal keeps its own break in its session's state; the store, which every session reads,
+// carries the latest one between them, so `/salah done` (or later, or now) in one reaches them all.
+export const SHARED_KEY = 'salah.break'
 
 type Watch = { breakMs: number; isHolding: boolean; lastTick: number }
 
@@ -40,9 +43,37 @@ async function today($: EngineInterface) {
   return value
 }
 
+// A break kept by an earlier version has no id; it began at its start.
+const idOf = (b: SalahBreak) => b.id ?? b.from
+const local = (r: SharedSalahBreak): SalahBreak => ({
+  id: idOf(r),
+  prayer: r.prayer,
+  from: r.from,
+  until: r.until,
+  ...(r.timeZone ? { timeZone: r.timeZone } : {}),
+})
+
+async function shared($: EngineInterface) {
+  try {
+    return ((await $.store.get(SHARED_KEY)) as SharedSalahBreak | undefined) ?? null
+  } catch {
+    return null
+  }
+}
+
+/** Tells the other terminals; this one goes on even if the store can't be written. */
+async function share($: EngineInterface, b: SharedSalahBreak) {
+  try {
+    await $.store.set(SHARED_KEY, b)
+  } catch {
+    // The others keep their own break until it ends.
+  }
+}
+
 async function begin($: EngineInterface, w: Watch, prayer: string, from: number, timeZone?: string) {
-  const b: SalahBreak = { prayer, from, until: from + w.breakMs, ...(timeZone ? { timeZone } : {}) }
+  const b: SalahBreak = { id: from, prayer, from, until: from + w.breakMs, ...(timeZone ? { timeZone } : {}) }
   await update($, current, () => b)
+  await share($, b)
   return b
 }
 
@@ -71,7 +102,12 @@ async function tick($: EngineInterface, w: Watch) {
 
   for (const slot of day?.slots ?? []) {
     if (!isPrayer(slot.name) || !crossed(slot.at)) continue
-    const b = await begin($, w, slot.name, slot.at, day?.timeZone)
+    // Another terminal crossed it first: take its break as it stands, unless it was already ended.
+    const r = await shared($)
+    const isTaken = r !== null && idOf(r) === slot.at
+    if (isTaken && r.endedAt) continue
+    const b = isTaken ? local(r) : await begin($, w, slot.name, slot.at, day?.timeZone)
+    if (isTaken) await update($, current, () => b)
     const hold = w.isHolding ? ' Prompts wait until then;' : ''
     $.ui.toast(`🧎 ${slot.name}: a salah break until ${at(b.until, b.timeZone)}.${hold} /salah done when you're back.`, {
       timeoutMs: 30e3,
@@ -79,6 +115,18 @@ async function tick($: EngineInterface, w: Watch) {
   }
 
   let b = await read($, current)
+  // What another terminal did: ended this break, put it off, or began one this terminal hasn't.
+  const r = await shared($)
+  if (r && (b ? idOf(r) === idOf(b) : !r.endedAt && now < r.until)) {
+    if (r.endedAt) {
+      await end($)
+      b = null
+    } else if (!b || b.from !== r.from || b.until !== r.until) {
+      const taken = local(r)
+      await update($, current, () => taken)
+      b = taken
+    }
+  }
   if (b && now >= b.until) {
     await end($)
     // A break long over (the feature was off, or the laptop slept) ends without a word.
@@ -127,6 +175,8 @@ export const salahBreak: Feature = (on, options) => {
 
     if (arg === 'done' || arg === 'skip') {
       if (!b) return { text: 'No salah break right now.' }
+      // First the store, so no other terminal's tick takes the break back up.
+      await share($, { ...b, id: idOf(b), endedAt: now })
       await end($)
       await tick($, watch)
       return { text: arg === 'done' ? 'Welcome back. Taqabbal Allahu minna wa minkum.' : 'Salah break skipped.' }
@@ -134,7 +184,9 @@ export const salahBreak: Feature = (on, options) => {
     if (arg === 'later') {
       if (!b) return { text: 'No salah break right now.' }
       const from = now + LATER_MS
-      await update($, current, () => ({ ...b, from, until: from + watch.breakMs }))
+      const nb = { ...b, id: idOf(b), from, until: from + watch.breakMs }
+      await update($, current, () => nb)
+      await share($, nb)
       await tick($, watch)
       return { text: `The salah break for ${b.prayer} starts in 5 minutes, at ${at(from, b.timeZone)}.` }
     }

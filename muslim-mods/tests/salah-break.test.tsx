@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { breakSettings } from '../hooks/salah-break'
+import { SHARED_KEY, breakSettings } from '../hooks/salah-break'
 import { only } from './only'
 
 const ONLY = only('salahBreak')
@@ -25,7 +25,13 @@ function world(on: On, { canShow = () => true, left = undefined as unknown } = {
   const tails: (string | undefined)[] = []
   const suggested: string[] = []
   let isLeftOver = left !== undefined
-  mock.store(on)
+  // The plugin's store, which every terminal shares: what the test writes here, another terminal wrote.
+  const store = new Map<string, unknown>()
+  on('store.get', (_, e) => ({ value: store.get(e.key) }) as never)
+  on('store.set', (_, e) => {
+    store.set(e.key, JSON.parse(JSON.stringify(e.value)))
+    return { value: undefined }
+  })
   // Stands in for prayer-times, and for a break an earlier load left in the session's state.
   on('state.get', (_, e, next) => {
     if (e.key === 'prayerToday') return { value: { value: DAY, version: 1 } } as never
@@ -53,7 +59,7 @@ function world(on: On, { canShow = () => true, left = undefined as unknown } = {
   })
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
-  return { toasts, tails, suggested }
+  return { toasts, tails, suggested, store }
 }
 
 const start = { cwd: '/', surface: 'terminal', isInteractive: true } as const
@@ -158,4 +164,67 @@ test('a break long over ends without a word', { options: ONLY }, async ($, on) =
   await $.session.start(start)
   expect(w.toasts).toEqual([])
   expect((await $.command.run(salah(''))).text).toContain('No salah break right now.')
+})
+
+// Another terminal is another session of the same plugin: its only line to this one is the store.
+test('/salah done in another terminal ends the break here too', { options: ONLY, timeoutMs: 30e3 }, async ($, on) => {
+  const clock = mock.clock(on, { now: Date.parse('2026-10-12T11:39:00+07:00') })
+  const w = world(on)
+  await $.session.start(start)
+  await $.ui.mount(HINT as never)
+  await clock.advance(60e3)
+  const shared = w.store.get(SHARED_KEY) as Record<string, unknown>
+  expect(shared).toEqual(expect.objectContaining({ id: DAY.slots[2].at, prayer: 'Dhuhr' }))
+  await $.prompt.submit(typed('fix the build'))
+
+  await clock.advance(3 * 60e3)
+  w.store.set(SHARED_KEY, { ...shared, endedAt: clock.now() })
+  await clock.advance(1e3)
+  expect(w.tails.at(-1)).toBeUndefined()
+  expect(w.suggested).toEqual(['fix the build'])
+  expect((await $.prompt.submit(typed('go on'))).text).toBe('go on')
+  // Ended without a word here, and not begun again.
+  await clock.advance(15 * 60e3)
+  expect(w.toasts.length).toBe(1)
+})
+
+test('/salah done here tells the other terminals', { options: ONLY }, async ($, on) => {
+  mock.clock(on, { now: Date.parse('2026-10-12T15:00:00+07:00') })
+  const w = world(on)
+  await $.session.start(start)
+  await $.command.run(salah('now'))
+  await $.command.run(salah('later'))
+  expect(w.store.get(SHARED_KEY)).toEqual(
+    expect.objectContaining({ prayer: 'Asr', from: Date.parse('2026-10-12T15:05:00+07:00') }),
+  )
+  await $.command.run(salah('done'))
+  expect(w.store.get(SHARED_KEY)).toEqual(expect.objectContaining({ endedAt: Date.parse('2026-10-12T15:00:00+07:00') }))
+})
+
+test('a break begun or put off in another terminal is taken up here', { options: ONLY }, async ($, on) => {
+  const clock = mock.clock(on, { now: Date.parse('2026-10-12T15:00:00+07:00') })
+  const w = world(on)
+  await $.session.start(start)
+  await $.ui.mount(HINT as never)
+  const now = clock.now()
+  const other = { id: now, prayer: 'Asr', from: now, until: now + 15 * 60e3, timeZone: 'Asia/Jakarta' }
+  w.store.set(SHARED_KEY, other)
+  await clock.advance(1e3)
+  expect((await $.prompt.submit(typed('wait'))).drop).toContain('Salah break for Asr until 15:15')
+
+  w.store.set(SHARED_KEY, { ...other, from: now + 5 * 60e3, until: now + 20 * 60e3 })
+  await clock.advance(1e3)
+  expect(w.tails.at(-1)).toBe('🧎 Salah break for Asr in 4:58')
+  expect((await $.prompt.submit(typed('quick one'))).text).toBe('quick one')
+})
+
+test('a prayer another terminal already ended starts no break here', { options: ONLY }, async ($, on) => {
+  const clock = mock.clock(on, { now: Date.parse('2026-10-12T17:44:30+07:00') })
+  const w = world(on)
+  await $.session.start(start)
+  const at = DAY.slots[4].at
+  w.store.set(SHARED_KEY, { id: at, prayer: 'Maghrib', from: at, until: at + 15 * 60e3, endedAt: at })
+  await clock.advance(60e3)
+  expect(w.toasts).toEqual([])
+  expect((await $.prompt.submit(typed('go'))).text).toBe('go')
 })

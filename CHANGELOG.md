@@ -2,6 +2,9 @@
 
 ## muslim-mods
 
+### 1.1.1
+- Salah break: one break across every terminal. `/salah done`, `later` and `now` in one reach the others within a second (each terminal ending it used to need its own `/salah done`), and a terminal opened during the break holds prompts too.
+
 ### 1.1.0
 - New: Salah break. At each prayer's time, a 15-minute break from work: a toast, a countdown first on the hint line, and the prompts you type held until it ends, then offered back in the prompt box. `/salah done`, `/salah later` (5 more minutes), `/salah now`; `/muslim break <minutes>` and `/muslim hold on|off`, or **s**, **l** and **h** on the dashboard. Options `salahBreak`, `salahBreakMinutes`, `salahBreakHold`.
 - Dashboard: keys 1 to 9.

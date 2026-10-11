@@ -306,6 +306,7 @@ The limits are read from what Claude Code reports, so this works on a Claude sub
 - At Fajr, Dhuhr, Asr, Maghrib and Isha a break begins and lasts 15 minutes (`salahBreakMinutes`). A prayer time the laptop slept through starts no break.
 - While it lasts, a prompt you type is not sent: it is kept, and when the break ends every prompt kept is offered back in the prompt box (dim, Tab takes it), as soon as the box is empty and Claude is idle. Only the words are kept; add attachments again. Slash commands, and prompts that come from anywhere but your keyboard, go through.
 - **`/salah done`** ends the break when you're back, **`/salah later`** puts it off 5 minutes, **`/salah now`** starts one, and **`/salah`** says where it stands.
+- With Claude Code open in several terminals, the break is one break: `/salah done`, `later` or `now` in any of them reaches the others within a second, and a terminal opened during the break holds prompts too.
 - With `salahBreakHold` off the break is only a reminder: the toast and the countdown, nothing held.
 - It needs Prayer times on for the times.
 
