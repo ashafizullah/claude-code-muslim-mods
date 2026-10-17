@@ -77,6 +77,8 @@ declare module 'claude-code' {
       tasbihLine: HintLine
       /** Whether the limit shown is /tasbih demo's, made up. */
       tasbihDemo: boolean
+      /** Whether the tasbih pane was opened by a used-up limit, and so closes when it comes back. */
+      tasbihForLimit: boolean
 
       /** The salah break under way or about to begin, or none. */
       salahBreak: SalahBreak | null

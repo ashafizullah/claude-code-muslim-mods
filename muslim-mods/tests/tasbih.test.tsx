@@ -88,6 +88,22 @@ test('a used-up limit invites once, and the hint clears when it resets', { optio
   await clock.advance(H + 60e3)
   await $.ui.mount(hint)
   expect(w.tails.at(-1)).toBeUndefined()
+  // The pane the limit opened goes with it.
+  expect(w.closed).toEqual(['tasbih'])
+})
+
+test('a limit measured as back closes the pane it opened, but not one asked for', { options: ONLY }, async ($, on) => {
+  mock.clock(on, { now: NOW })
+  const w = world(on)
+  await $.session.start(start)
+  await $.session.measure(measure([{ kind: 'five_hour', percentUsed: 100, resetsAt: at(H) }]))
+  expect(w.opened).toEqual(['tasbih'])
+  await $.session.measure(measure([{ kind: 'five_hour', percentUsed: 0, resetsAt: at(5 * H) }]))
+  expect(w.closed).toEqual(['tasbih'])
+
+  await $.command.run({ command: 'tasbih', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } } as never)
+  await $.session.measure(measure([{ kind: 'five_hour', percentUsed: 10, resetsAt: at(5 * H) }]))
+  expect(w.closed).toEqual(['tasbih'])
 })
 
 test('a window already invited in an earlier session keeps only the hint', { options: ONLY }, async ($, on) => {

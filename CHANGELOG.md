@@ -2,6 +2,9 @@
 
 ## muslim-mods
 
+### 1.1.3
+- Tasbih: the pane a used-up limit opened closes when the limit comes back; one opened with `/tasbih` stays until closed.
+
 ### 1.1.2
 - Salah break: a slow tick, or a `/salah` command during one, no longer begins the break or shows its toast twice; a `/salah now` in another terminal during a break replaces the break here too, so its `/salah done` ends it everywhere.
 

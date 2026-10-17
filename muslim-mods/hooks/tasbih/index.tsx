@@ -15,6 +15,8 @@ const counts = atom({ plugin: 'muslim-mods', key: 'tasbihCounts' } as const, {})
 const line = atom({ plugin: 'muslim-mods', key: 'tasbihLine' } as const, null)
 // Set by /tasbih demo, whose made-up limit /tasbih close takes away again; in state, so a reload keeps it.
 const isDemo = atom({ plugin: 'muslim-mods', key: 'tasbihDemo' } as const, false)
+// The pane was opened by a used-up limit, not by /tasbih: it closes once the limit comes back.
+const forLimit = atom({ plugin: 'muslim-mods', key: 'tasbihForLimit' } as const, false)
 
 export type Phrase = { id: string; arabic: string; transliteration: string; english: string; repeat: number }
 
@@ -91,6 +93,10 @@ async function refresh($: EngineInterface) {
   const until = untilText(top?.resetsAt, now)
   const text = top ? `📿 ${NAME[top.kind]} reached${until ? ` · back in ${until}` : ''} · /tasbih` : null
   if ((await read($, line)) !== text) await update($, line, () => text)
+  if (!list.length && (await read($, forLimit))) {
+    await update($, forLimit, () => false)
+    await $.ui.close({ id: PANE })
+  }
 }
 
 async function open($: EngineInterface, columns: number, showArabic: boolean, focus: boolean) {
@@ -107,6 +113,7 @@ async function open($: EngineInterface, columns: number, showArabic: boolean, fo
 async function finish($: EngineInterface) {
   await update($, index, () => 0)
   await update($, counts, () => ({}))
+  await update($, forLimit, () => false)
   await $.ui.close({ id: PANE })
   $.ui.toast('📿 May Allah accept it from you.', { timeoutMs: 8e3 })
 }
@@ -124,6 +131,7 @@ async function count($: EngineInterface) {
 
 /** The toast and the pane that ask for dhikr while `list` is used up. */
 async function invite($: EngineInterface, list: ReachedLimit[], columns: number, showArabic: boolean, focus: boolean) {
+  await update($, forLimit, () => true)
   $.ui.toast(`📿 ${messageFor(list, await $.clock.now())} A moment for SubhanAllah, Alhamdulillah, Allahu akbar? /tasbih`, { timeoutMs: 20e3 })
   return open($, columns, showArabic, focus)
 }
@@ -153,6 +161,7 @@ export const tasbih: Feature = (on, options) => {
   on('command.run', { command: 'tasbih' }, async ($, e) => {
     const asked = e.args.trim().toLowerCase()
     if (asked === 'close') {
+      await update($, forLimit, () => false)
       await $.ui.close({ id: PANE })
       if (await read($, isDemo)) {
         await update($, isDemo, () => false)
@@ -170,6 +179,8 @@ export const tasbih: Feature = (on, options) => {
       await invite($, list, e.presentation.columns, showArabic, true)
       return { text: 'Tasbih demo: a 5-hour limit made up as used up. /tasbih close ends it.' }
     }
+    // Asked for, the pane stays until closed, limit or not.
+    await update($, forLimit, () => false)
     await open($, e.presentation.columns, showArabic, true)
 
     return { text: 'Tasbih opened. Keys: c count, r restart, x close.' }
@@ -202,7 +213,16 @@ export const tasbih: Feature = (on, options) => {
               await update($, counts, () => ({}))
             }}
           />
-          <Button key="close" hotkey="x" role="dismiss" label="Close" onPress={() => $.ui.close({ id: PANE })} />
+          <Button
+            key="close"
+            hotkey="x"
+            role="dismiss"
+            label="Close"
+            onPress={async () => {
+              await update($, forLimit, () => false)
+              await $.ui.close({ id: PANE })
+            }}
+          />
         </Box>
         {showArabic && <Text>{p.arabic}</Text>}
         <Text bold>{p.transliteration}</Text>
